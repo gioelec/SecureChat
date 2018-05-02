@@ -3,10 +3,8 @@ package securechat;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.net.ServerSocket;
 import java.net.Socket;
 import cryptoutils.communication.Request;
-import cryptoutils.communication.SecureEndpoint;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
@@ -20,8 +18,6 @@ import java.security.cert.CertificateException;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import cryptoutils.messagebuilder.MessageBuilder;
-import cryptoutils.hashutils.HashManager;
 import cryptoutils.cipherutils.CryptoManager;
 
 
@@ -46,31 +42,34 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
     }
 
     public void run(){
-        while(true){
+        //while(true){
             try(
-                Socket s = new Socket(hostName, port);
+                Socket s = new Socket();
+                //s.connect(new InetSocketAddress(hostName, port), 2000);
                 InputStream in = s.getInputStream();
                 OutputStream out = s.getOutputStream();
                 ObjectInputStream oin = new ObjectInputStream(in);
                 ObjectOutputStream oout = new ObjectOutputStream(out);
             ){
-                myReq = generateRequest();
+                System.out.println("Sending request");
+                myReq = generateRequest();                
                 oout.writeObject(myReq.getEncrypted(req.getPublicKey()));
                 if(!getRequest(oin)){
                     System.err.println("Request corrupted the signature is not authentic");//TODO in request verify
-                    continue;
+                    return;
                 }
+                System.out.println("Got reply");                
                 sendChallenge(oout);
                 if(!receiveChallenge(oin)){
                     System.err.println("Challenge not fulfilled by the other user");
-                    continue;
+                    return;
                 }
                 System.out.println("PROTOCOL ENDED CORRECTLY");
-                
+                success = true;
             }catch(Exception e){
                 System.err.println(e.getMessage());
             }
-        }
+        //}
     }
     
     /**

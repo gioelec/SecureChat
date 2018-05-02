@@ -18,6 +18,7 @@ public class HandshakeProtocol {
     protected Certificate myCertificate;
     protected Certificate CACertificate;
     protected int myNonce;
+    protected boolean success = false;
     public HandshakeProtocol(PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate){
         this.myKey = myKey;
         this.issuer = issuer;
@@ -42,5 +43,9 @@ public class HandshakeProtocol {
     }
     public byte[] getAuthKey(){
         return authKey;
+    }
+    
+    public boolean getHandshakeResult() {
+        return success;
     }
 }

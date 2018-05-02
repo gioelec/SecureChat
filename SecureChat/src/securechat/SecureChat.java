@@ -2,41 +2,23 @@ package securechat;
 
 import cryptoutils.cipherutils.CertificateManager;
 import cryptoutils.cipherutils.CryptoManager;
-import cryptoutils.communication.TrustedPartyInterface;
+import cryptoutils.communication.Request;
 import java.io.FileInputStream;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
+import java.security.cert.*;
 import java.util.Date;
 import java.util.Properties;
+import java.util.concurrent.*;
 import javafx.application.Application;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.geometry.HPos;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
+import javafx.collections.*;
+import javafx.geometry.*;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyCombination;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
+import javafx.scene.control.*;
+import javafx.scene.control.Alert.*;
+import javafx.scene.input.*;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
-import javafx.util.Callback;
 import securechat.frontend.MessageEntry;
 import securechat.model.Message;
 
@@ -44,8 +26,9 @@ public class SecureChat extends Application {
     private final Label connectToLabel = new Label("NAME AND HOST TO CONNECT WITH");
     private final TextField connectToField = new TextField();
     private final Button connectButton = new Button("CONNECT");
-    private final ObservableList<Message> myL = FXCollections.observableArrayList();
+    private final static ObservableList<Message> myL = FXCollections.observableArrayList();
     private final ListView<Message> l = new ListView<>(myL);
+    private static BlockingQueue<String> sendBuffer = new LinkedBlockingQueue<>();
     private final TextArea messageArea = new TextArea();
     private final Button sendButton = new Button("SEND");
     private final Properties properties = new Properties();
@@ -54,12 +37,40 @@ public class SecureChat extends Application {
     private Certificate myCertificate;
     private String myUsername;
     private Certificate authorityCertificate;
+    
     private HBox buildConnectControls() {
         HBox connectControls = new HBox(5);
         connectControls.getChildren().addAll(connectToField,connectButton);
         HBox.setHgrow(connectButton,Priority.ALWAYS);
-        HBox.setHgrow(connectToField,Priority.ALWAYS);        
+        HBox.setHgrow(connectToField,Priority.ALWAYS);  
+        connectButton.setOnAction(ev -> {handleConnect();});
         return connectControls;
+    }
+    
+    private void handleConnect() {
+        String query = connectToField.getText();
+        String queryElements[] = query.split("@");
+        if(queryElements.length < 2) return;
+        String username = queryElements[0];
+        String hostName = queryElements[1];
+        System.out.println("Starting handshake protocol with: "+hostName);
+        Client connectThreadRunnable = new Client(hostName, 9999, pk, myUsername, myCertificate, authorityCertificate);
+        Thread connectThread = new Thread(connectThreadRunnable);
+        connectThread.start();
+        try {
+            connectThread.join();
+            if(!connectThreadRunnable.getHandshakeResult()) return;
+            byte[] macKey = connectThreadRunnable.getAuthKey();
+            byte[] symKey = connectThreadRunnable.getSymKey();
+            Receiver messageReceiverRunnable = new Receiver(myL, username, macKey, symKey, 9999+1, hostName);
+            Sender messageSenderRunnable = new Sender(sendBuffer, macKey, symKey, 9999+1, hostName);
+            Thread receiverThread = new Thread(messageReceiverRunnable);
+            Thread senderThread = new Thread(messageSenderRunnable);
+            receiverThread.start();
+            senderThread.start();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
     }
     
     private void configureTextFields() {
@@ -132,18 +143,14 @@ public class SecureChat extends Application {
     }
     
     private void configureListView() {
-        l.setCellFactory(new Callback<ListView<Message>, ListCell<Message>>(){
-            @Override
-            public ListCell<Message> call(ListView<Message> p) {
-                MessageEntry cell = new MessageEntry();
-                return cell;
-            }
+        l.setCellFactory((ListView<Message> p) -> {
+            MessageEntry cell = new MessageEntry();
+            return cell;
         });
     }
     
     @Override
     public void start(Stage primaryStage) {
-
         configureTextFields();
         setOnConnectButtonClickHandler();
         setOnSendButtonClickHandler();
@@ -161,32 +168,45 @@ public class SecureChat extends Application {
         appStage = primaryStage;
         loadCryptoSpecs();
         /* HERE SOMETHING TO START THREADS AND THINGS */
+        System.out.println("Protocol listener started...");
+        Server protocolServerRunnable = new Server(9999,pk,myUsername,myCertificate,authorityCertificate);
+        Thread protocolServerThread = new Thread(protocolServerRunnable);
+    }
+    
+    public static Object[] askRequestConfirmation(Request request) {
+        Alert confAlert = new Alert(AlertType.CONFIRMATION);
+        confAlert.setTitle("SecureChat");
+        confAlert.setHeaderText("Incoming request");
+        confAlert.setContentText("Request from"+request.getIssuer()+"\nCertificate released to: "+request.getCertificateSubject()+"\nCertificate released by: "+request.getCertificateIssuer()+"\nAccept?");
+        Object[] returns = new Object[3];
+        returns[0] = (confAlert.showAndWait().get() == ButtonType.OK);
+        returns[1] = myL;
+        returns[2] = sendBuffer;
+        return returns;
     }
     
     private void loadCryptoSpecs() {
         try(FileInputStream fis = new FileInputStream("config.properties");) {
             properties.load(fis);
-            Registry ttpRegistry = LocateRegistry.getRegistry(9999);            
-            String me = properties.getProperty("myname");
-            TrustedPartyInterface tpi = (TrustedPartyInterface)ttpRegistry.lookup("TrustedPartyInterface");      
-            Certificate cert = tpi.getUserCertificate(me);
+            Certificate cert = CertificateManager.readCertFromFile(properties.getProperty("myCertPath"));
             Certificate authCert = CertificateManager.readCertFromFile(properties.getProperty("authcertpath"));
-            if(cert == null) throw new Exception("Invalid username");
             if(!CertificateManager.verifyCertificate((X509Certificate)cert, authCert)) throw new Exception("Invalid certificate");
             PrivateKey myPrivKey = CryptoManager.readRSAPrivateKeyFromPEMFile(properties.getProperty("privatekeypath"));
             PublicKey myPublicKey = cert.getPublicKey(); //GET CERTIFICATE FROM SERVER WHITH RMI
             byte[] testBytes = {0x8,0x6};
             CryptoManager.decryptRSA(CryptoManager.encryptRSA(testBytes, myPublicKey), myPrivKey); //Should raise an exception and terminate the program if wrong
+            
             Alert success = new Alert(AlertType.INFORMATION);
             success.setTitle("SecureChat");
             success.setHeaderText("Application started successfully");
             success.setContentText("1)Private key loaded\n2)Authority certificate loaded\n3)Identity online");
             success.showAndWait().filter(response -> response == ButtonType.OK);
             appStage.setTitle("SecureChat - Online (Idle)");
+            
             pk = myPrivKey;
             myCertificate = cert;
             authorityCertificate = authCert;
-            myUsername = me;
+            myUsername = properties.getProperty("myname");
         } catch(Exception e) {
             Alert error = new Alert(AlertType.ERROR);
             error.setTitle("SecureChat");
