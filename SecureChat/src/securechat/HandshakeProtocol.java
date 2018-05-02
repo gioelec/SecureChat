@@ -1,27 +1,14 @@
 package securechat;
 
-import cryptoutils.cipherutils.CryptoManager;
-import cryptoutils.communication.Request;
 import cryptoutils.communication.SecureEndpoint;
 import cryptoutils.hashutils.HashManager;
 import cryptoutils.messagebuilder.MessageBuilder;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.SignatureException;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 
 public class HandshakeProtocol {
     protected PrivateKey myKey;

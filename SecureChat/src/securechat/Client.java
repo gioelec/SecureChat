@@ -6,6 +6,7 @@ import java.io.ObjectInputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import cryptoutils.communication.Request;
+import cryptoutils.communication.SecureEndpoint;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
@@ -19,13 +20,16 @@ import java.security.cert.CertificateException;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import cryptoutils.messagebuilder.MessageBuilder;
+import cryptoutils.hashutils.HashManager;
 import cryptoutils.cipherutils.CryptoManager;
 
 
-public class Server extends HandshakeProtocol implements Runnable{ //Represents Alice in the protocol specifics
+public class Client extends HandshakeProtocol implements Runnable{ //Represents Alice in the protocol specifics
     private final int port;
     private Request req;
     private Request myReq;
+    private String hostName;
     
     /**
      * 
@@ -35,33 +39,34 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
      * @param myCertificate
      * @param CACertificate 
      */
-    public Server(int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate){
+    public Client(String hostName, int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate){
         super(myKey,issuer, myCertificate, CACertificate);
         this.port = port;
+        this.hostName = hostName;
     }
 
     public void run(){
         while(true){
             try(
-                ServerSocket ss = new ServerSocket(port);
-                Socket s = ss.accept();
+                Socket s = new Socket(hostName, port);
                 InputStream in = s.getInputStream();
                 OutputStream out = s.getOutputStream();
                 ObjectInputStream oin = new ObjectInputStream(in);
                 ObjectOutputStream oout = new ObjectOutputStream(out);
             ){
+                myReq = generateRequest();
+                oout.writeObject(myReq.getEncrypted(req.getPublicKey()));
                 if(!getRequest(oin)){
                     System.err.println("Request corrupted the signature is not authentic");//TODO in request verify
                     continue;
                 }
-                myReq = generateRequest();
-                oout.writeObject(myReq.getEncrypted(req.getPublicKey()));
+                sendChallenge(oout);
                 if(!receiveChallenge(oin)){
                     System.err.println("Challenge not fulfilled by the other user");
                     continue;
                 }
-                sendChallenge(oout);
                 System.out.println("PROTOCOL ENDED CORRECTLY");
+                
             }catch(Exception e){
                 System.err.println(e.getMessage());
             }
@@ -84,7 +89,6 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
     private boolean getRequest(ObjectInputStream obj) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, CertificateException{
         this.req = Request.fromEncryptedRequest((byte []) obj.readObject(),myKey); //first we read the length we expect LBA||nb||S(sb,LBA||nb)
         this.symKey = req.getSecretKey();
-        
         return (req.verifySignature() && req.verifyCertificate(CACertificate)); //TODO verify name
     }
     
