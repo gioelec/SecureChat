@@ -37,4 +37,10 @@ public class HandshakeProtocol {
         byte[] msg = MessageBuilder.concatBytes(myNonce,HashManager.doMAC(myNonce, authKey, SecureEndpoint.AUTH_ALG));
         return SecureEndpoint.secureSend(msg, oout, symKey, authKey);
     }
+    public byte[] getSymKey(){
+        return symKey;
+    }
+    public byte[] getAuthKey(){
+        return authKey;
+    }
 }
