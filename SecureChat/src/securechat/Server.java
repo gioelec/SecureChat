@@ -1,3 +1,5 @@
+package securechat;
+
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -23,17 +25,10 @@ import cryptoutils.hashutils.HashManager;
 import cryptoutils.cipherutils.CryptoManager;
 
 
-public class Server implements Runnable { //Represents Alice in the protocol specifics
+public class Server extends HandshakeProtocol implements Runnable{ //Represents Alice in the protocol specifics
     private final int port;
     private Request req;
     private Request myReq;
-    private PrivateKey myKey;
-    private byte[] authKey;
-    private byte[] symKey;  //KAB
-    private String issuer;
-    private Certificate myCertificate;
-    private Certificate CACertificate;
-    private int myNonce;
     
     /**
      * 
@@ -44,11 +39,8 @@ public class Server implements Runnable { //Represents Alice in the protocol spe
      * @param CACertificate 
      */
     public Server(int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate){
+        super(myKey,issuer, myCertificate, CACertificate);
         this.port = port;
-        this.myKey = myKey;
-        this.issuer = issuer;
-        this.myCertificate = myCertificate;
-        this.CACertificate = CACertificate;
     }
 
     public void run(){
@@ -112,19 +104,5 @@ public class Server implements Runnable { //Represents Alice in the protocol spe
         this.myNonce =req.setRandomChallenge();
         req.sign(myKey);
         return req;
-    }   
-    private boolean receiveChallenge(ObjectInputStream oin){
-        byte [] decryptedMsg =  SecureEndpoint.secureReceive(oin, symKey, authKey);  //data,kab,mab
-        if(decryptedMsg!=null){
-            int receivedNonce =MessageBuilder.toInt(MessageBuilder.extractFirstBytes(decryptedMsg, 4));
-            return (myReq.getChallengeNonce()== receivedNonce);      
-        }
-        return false;
-    }
-    private boolean sendChallenge(ObjectOutputStream oout) throws NoSuchAlgorithmException, InvalidKeyException{
-        byte[] myNonce = MessageBuilder.toByteArray(this.myNonce);
-        byte[] msg = MessageBuilder.concatBytes(myNonce,HashManager.doMAC(myNonce, req.getSecretKey(), SecureEndpoint.AUTH_ALG));
-        return SecureEndpoint.secureSend(msg, oout, symKey, authKey);
-    }
-    
+    }       
 }
