@@ -82,7 +82,7 @@ public class SecureChat extends Application {
                 /*
                 ////HERE WE ACTUALLY SEND THE MESSAGE OVER THE SECURE CHANNEL
                 */
-                myL.add(new Message("Me",new Date(),text));
+                myL.add(new Message(myUsername,new Date(),text));
                 messageArea.clear();         
                 sendButton.setDisable(true);
             }
