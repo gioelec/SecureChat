@@ -20,11 +20,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import cryptoutils.cipherutils.CryptoManager;
-import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.util.concurrent.BlockingQueue;
-import javafx.collections.ObservableList;
-import securechat.model.Message;
 
 
 public class Server extends HandshakeProtocol implements Runnable{ //Represents Alice in the protocol specifics
@@ -49,6 +45,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
     public void run(){
         while(true){
             String requestIpAddress = null;
+            int requestPort = -1;
             Object[] confReturn = null;
             try(
                 ServerSocket ss = new ServerSocket(port, 1, InetAddress.getByName("0.0.0.0"));
@@ -77,14 +74,16 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                     System.err.println("Challenge not fulfilled by the other user");
                     continue;
                 }
-                sendChallenge(oout);
+                sendChallenge(oout,req.getChallengeNonce());
                 success = true;
                 requestIpAddress = s.getInetAddress().getHostAddress();
+                requestPort = s.getPort();
             }catch(Exception e){
                 e.printStackTrace();
             }
             if(!success) continue;
-            System.out.println("Creating messaging thread with: "+requestIpAddress);
+            System.out.println("PROTOCOL ENDED CORRECTLY WITH: "+requestIpAddress+":"+requestPort);
+            System.out.println("Creating messaging thread with: "+requestIpAddress+":"+requestPort+1);
        //     Receiver messageReceiverRunnable = new Receiver((ObservableList<Message>) confReturn[1], req.getIssuer(), authKey, symKey, 9999+1, requestIpAddress);
           //  Sender messageSenderRunnable = new Sender((BlockingQueue<String>) confReturn[2], authKey, symKey, 9999+1, requestIpAddress);
            // Thread receiverThread = new Thread(messageReceiverRunnable);

@@ -27,14 +27,18 @@ public class HandshakeProtocol {
     }
     protected boolean receiveChallenge(ObjectInputStream oin){
         byte [] decryptedMsg =  SecureEndpoint.secureReceive(oin, symKey, authKey);  //data,kab,mab
+        
         if(decryptedMsg!=null){
-            int receivedNonce =MessageBuilder.toInt(MessageBuilder.extractFirstBytes(decryptedMsg, 4));
+            System.out.println("NONCE RECEIVED");
+            int receivedNonce =MessageBuilder.toInt(decryptedMsg);
+            System.out.println("RECEIVED:"+receivedNonce);
+            System.out.println("EXPCETED:"+myNonce);
             return (myNonce == receivedNonce);      
         }
         return false;
     }
-    protected boolean sendChallenge(ObjectOutputStream oout) throws NoSuchAlgorithmException, InvalidKeyException{
-        byte[] myNonce = MessageBuilder.toByteArray(this.myNonce);
+    protected boolean sendChallenge(ObjectOutputStream oout,int receivedNonce) throws NoSuchAlgorithmException, InvalidKeyException{
+        byte[] myNonce = MessageBuilder.toByteArray(receivedNonce);
         byte[] msg = MessageBuilder.concatBytes(myNonce,HashManager.doMAC(myNonce, authKey, SecureEndpoint.AUTH_ALG));
         return SecureEndpoint.secureSend(msg, oout, symKey, authKey);
     }

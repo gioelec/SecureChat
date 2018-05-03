@@ -41,17 +41,12 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
         //while(true){
             try(
                 Socket s = new Socket(hostName,port);
-                //s.connect(new InetSocketAddress(hostName, port), 2000); //ADD A TIMEOUT OF FEW SECONDS TO LET THE GUI TAKE CONTROL AGAIN
                 InputStream in = s.getInputStream();
                 OutputStream out = s.getOutputStream();
                 ObjectOutputStream oout = new ObjectOutputStream(out);
                 ObjectInputStream oin = new ObjectInputStream(in);
             ){
                 System.out.println("Sending request");
-                /*
-                    ASK CERTIFICATE TO RECIPIENT 
-                    AND USE THE CONTAINING PUBLIC KEY TO ENCRYPT REQUEST
-                */
                 oout.writeObject("<REQUEST>"+issuer+"</REQUEST>");
                 System.out.println("REQUEST SENT");
                 otherCertificate = (Certificate)oin.readObject();
@@ -63,12 +58,12 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
                     return;
                 }
                 System.out.println("Got reply");                
-                sendChallenge(oout);
+                sendChallenge(oout,req.getChallengeNonce());
                 if(!receiveChallenge(oin)){
                     System.err.println("Challenge not fulfilled by the other user");
                     return;
                 }
-                System.out.println("PROTOCOL ENDED CORRECTLY");
+                System.out.println("PROTOCOL ENDED CORRECTLY WITH: "+hostName+":"+port);
                 success = true;
             }catch(Exception e){
                 e.printStackTrace();

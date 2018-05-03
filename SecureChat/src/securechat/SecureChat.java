@@ -69,14 +69,15 @@ public class SecureChat extends Application {
                 (new Alert(AlertType.ERROR,"Could not connect")).showAndWait().filter(res -> res == ButtonType.OK);
                 return;
             };
-            byte[] macKey = connectThreadRunnable.getAuthKey();
+            return;
+            /*byte[] macKey = connectThreadRunnable.getAuthKey();
             byte[] symKey = connectThreadRunnable.getSymKey();
             Receiver messageReceiverRunnable = new Receiver(myL, username, macKey, symKey, listeningPort+1, hostName);
             Sender messageSenderRunnable = new Sender(sendBuffer, macKey, symKey, Integer.parseInt(port)+1, hostName);
             Thread receiverThread = new Thread(messageReceiverRunnable);
             Thread senderThread = new Thread(messageSenderRunnable);
             receiverThread.start();
-            senderThread.start();
+            senderThread.start();*/
         } catch(Exception e) {
             e.printStackTrace();
         }
