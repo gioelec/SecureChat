@@ -37,6 +37,7 @@ public class SecureChat extends Application {
     private Certificate myCertificate;
     private String myUsername;
     private Certificate authorityCertificate;
+    private int listeningPort;
     
     private HBox buildConnectControls() {
         HBox connectControls = new HBox(5);
@@ -52,9 +53,13 @@ public class SecureChat extends Application {
         String queryElements[] = query.split("@");
         if(queryElements.length < 2) return;
         String username = queryElements[0];
-        String hostName = queryElements[1];
-        System.out.println("Starting handshake protocol with: "+hostName);
-        Client connectThreadRunnable = new Client(hostName, 9999, pk, myUsername, myCertificate, authorityCertificate);
+        String hostNamePort = queryElements[1];
+        String hostNameElements[] = hostNamePort.split(":");
+        if(hostNameElements.length < 2) return;
+        String hostName = hostNameElements[0];
+        String port = hostNameElements[1];
+        System.out.println("Starting handshake protocol with: "+hostName+":"+port);
+        Client connectThreadRunnable = new Client(hostName, Integer.parseInt(port), pk, myUsername, myCertificate, authorityCertificate);
         Thread connectThread = new Thread(connectThreadRunnable);
         connectThread.start();
         try {
@@ -62,8 +67,8 @@ public class SecureChat extends Application {
             if(!connectThreadRunnable.getHandshakeResult()) return;
             byte[] macKey = connectThreadRunnable.getAuthKey();
             byte[] symKey = connectThreadRunnable.getSymKey();
-            Receiver messageReceiverRunnable = new Receiver(myL, username, macKey, symKey, 9999+1, hostName);
-            Sender messageSenderRunnable = new Sender(sendBuffer, macKey, symKey, 9999+1, hostName);
+            Receiver messageReceiverRunnable = new Receiver(myL, username, macKey, symKey, listeningPort+1, hostName);
+            Sender messageSenderRunnable = new Sender(sendBuffer, macKey, symKey, Integer.parseInt(port)+1, hostName);
             Thread receiverThread = new Thread(messageReceiverRunnable);
             Thread senderThread = new Thread(messageSenderRunnable);
             receiverThread.start();
@@ -169,8 +174,9 @@ public class SecureChat extends Application {
         loadCryptoSpecs();
         /* HERE SOMETHING TO START THREADS AND THINGS */
         System.out.println("Protocol listener started...");
-        Server protocolServerRunnable = new Server(9999,pk,myUsername,myCertificate,authorityCertificate);
+        Server protocolServerRunnable = new Server(listeningPort,pk,myUsername,myCertificate,authorityCertificate);
         Thread protocolServerThread = new Thread(protocolServerRunnable);
+        protocolServerThread.start();
     }
     
     public static Object[] askRequestConfirmation(Request request) {
@@ -207,6 +213,7 @@ public class SecureChat extends Application {
             myCertificate = cert;
             authorityCertificate = authCert;
             myUsername = properties.getProperty("myname");
+            listeningPort = Integer.parseInt(properties.getProperty("defaultProtocolPort"));
         } catch(Exception e) {
             Alert error = new Alert(AlertType.ERROR);
             error.setTitle("SecureChat");
