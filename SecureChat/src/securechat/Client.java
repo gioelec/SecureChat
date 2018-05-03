@@ -53,7 +53,11 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
             ){
                 System.out.println("Sending request");
                 myReq = generateRequest();                
-                oout.writeObject(myReq.getEncrypted(req.getPublicKey()));
+                /*
+                    ASK CERTIFICATE TO RECIPIENT 
+                    AND USE THE CONTAINING PUBLIC KEY TO ENCRYPT REQUEST
+                */
+                oout.writeObject(myReq.getEncrypted(req.getPublicKey())); // THIS PUBLIC KEY MUST BE PROVIDED BY A CERTIICATE
                 if(!getRequest(oin)){
                     System.err.println("Request corrupted the signature is not authentic");//TODO in request verify
                     return;
@@ -87,7 +91,7 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
      */
     private boolean getRequest(ObjectInputStream obj) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, CertificateException{
         this.req = Request.fromEncryptedRequest((byte []) obj.readObject(),myKey); //first we read the length we expect LBA||nb||S(sb,LBA||nb)
-        this.symKey = req.getSecretKey();
+        this.authKey = req.getSecretKey();
         return (req.verifySignature() && req.verifyCertificate(CACertificate)); //TODO verify name
     }
     
@@ -100,7 +104,7 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
      * @throws SignatureException 
      */
     private Request generateRequest() throws CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, SignatureException{
-        this.authKey = CryptoManager.generateAES256RandomSecretKey();
+        this.symKey = CryptoManager.generateAES256RandomSecretKey();
         Request req = new Request(issuer,this.req.getIssuer(),myCertificate,myKey.getEncoded());
         this.myNonce =req.setRandomChallenge();
         req.sign(myKey);
