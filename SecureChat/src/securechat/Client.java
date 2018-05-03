@@ -44,20 +44,20 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
     public void run(){
         //while(true){
             try(
-                Socket s = new Socket();
-                //s.connect(new InetSocketAddress(hostName, port), 2000);
+                Socket s = new Socket(hostName,port);
+                //s.connect(new InetSocketAddress(hostName, port), 2000); //ADD A TIMEOUT OF FEW SECONDS TO LET THE GUI TAKE CONTROL AGAIN
                 InputStream in = s.getInputStream();
                 OutputStream out = s.getOutputStream();
                 ObjectInputStream oin = new ObjectInputStream(in);
                 ObjectOutputStream oout = new ObjectOutputStream(out);
             ){
                 System.out.println("Sending request");
-                myReq = generateRequest();                
                 /*
                     ASK CERTIFICATE TO RECIPIENT 
                     AND USE THE CONTAINING PUBLIC KEY TO ENCRYPT REQUEST
                 */
-                oout.writeObject(myReq.getEncrypted(req.getPublicKey())); // THIS PUBLIC KEY MUST BE PROVIDED BY A CERTIICATE
+                myReq = generateRequest();                
+                oout.writeObject(myReq.getEncrypted(req.getPublicKey())); // THIS PUBLIC KEY MUST BE PROVIDED BY A CERTIICATE REQ OBJECT IS NULL
                 if(!getRequest(oin)){
                     System.err.println("Request corrupted the signature is not authentic");//TODO in request verify
                     return;
@@ -105,7 +105,7 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
      */
     private Request generateRequest() throws CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, SignatureException{
         this.symKey = CryptoManager.generateAES256RandomSecretKey();
-        Request req = new Request(issuer,this.req.getIssuer(),myCertificate,myKey.getEncoded());
+        Request req = new Request(issuer,this.req.getIssuer(),myCertificate,myKey.getEncoded()); //AGAIN HERE THE this.req OBJECT IS NULL, CANNOT ACCESS IT!
         this.myNonce =req.setRandomChallenge();
         req.sign(myKey);
         return req;
