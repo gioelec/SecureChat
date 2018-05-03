@@ -63,8 +63,12 @@ public class SecureChat extends Application {
         Thread connectThread = new Thread(connectThreadRunnable);
         connectThread.start();
         try {
-            connectThread.join();
-            if(!connectThreadRunnable.getHandshakeResult()) return;
+            connectThread.join(3000);
+            if(!connectThreadRunnable.getHandshakeResult()) {
+                connectThread.interrupt();
+                (new Alert(AlertType.ERROR,"Could not connect")).showAndWait().filter(res -> res == ButtonType.OK);
+                return;
+            };
             byte[] macKey = connectThreadRunnable.getAuthKey();
             byte[] symKey = connectThreadRunnable.getSymKey();
             Receiver messageReceiverRunnable = new Receiver(myL, username, macKey, symKey, listeningPort+1, hostName);
@@ -194,11 +198,12 @@ public class SecureChat extends Application {
     private void loadCryptoSpecs() {
         try(FileInputStream fis = new FileInputStream("config.properties");) {
             properties.load(fis);
-            Certificate cert = CertificateManager.readCertFromFile(properties.getProperty("myCertPath"));
+            myCertificate = CertificateManager.readCertFromFile(properties.getProperty("myCertPath"));
+            if(myCertificate == null) throw new Exception("Certificate not found");
             Certificate authCert = CertificateManager.readCertFromFile(properties.getProperty("authcertpath"));
-            if(!CertificateManager.verifyCertificate((X509Certificate)cert, authCert)) throw new Exception("Invalid certificate");
+            if(!CertificateManager.verifyCertificate((X509Certificate)myCertificate, authCert)) throw new Exception("Invalid certificate");
             PrivateKey myPrivKey = CryptoManager.readRSAPrivateKeyFromPEMFile(properties.getProperty("privatekeypath"));
-            PublicKey myPublicKey = cert.getPublicKey(); //GET CERTIFICATE FROM SERVER WHITH RMI
+            PublicKey myPublicKey = myCertificate.getPublicKey(); 
             byte[] testBytes = {0x8,0x6};
             CryptoManager.decryptRSA(CryptoManager.encryptRSA(testBytes, myPublicKey), myPrivKey); //Should raise an exception and terminate the program if wrong
             
@@ -207,12 +212,11 @@ public class SecureChat extends Application {
             success.setHeaderText("Application started successfully");
             success.setContentText("1)Private key loaded\n2)Authority certificate loaded\n3)Identity online");
             success.showAndWait().filter(response -> response == ButtonType.OK);
-            appStage.setTitle("SecureChat - Online (Idle)");
             
             pk = myPrivKey;
-            myCertificate = cert;
             authorityCertificate = authCert;
             myUsername = properties.getProperty("myname");
+            appStage.setTitle(myUsername + " - Online (Idle)");
             listeningPort = Integer.parseInt(properties.getProperty("defaultProtocolPort"));
         } catch(Exception e) {
             Alert error = new Alert(AlertType.ERROR);
