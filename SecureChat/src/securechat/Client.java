@@ -26,7 +26,7 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
     private Request req;
     private Request myReq;
     private String hostName;
-    
+    private Certificate otherCertificate;
     /**
      * 
      * @param port
@@ -57,9 +57,9 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
                     AND USE THE CONTAINING PUBLIC KEY TO ENCRYPT REQUEST
                 */
                 oout.writeObject("<REQUEST>"+issuer+"</REQUEST>");
-                Certificate c = (Certificate)oin.readObject();
+                otherCertificate = (Certificate)oin.readObject();
                 myReq = generateRequest();                
-                oout.writeObject(myReq.getEncrypted(c.getPublicKey())); // THIS PUBLIC KEY MUST BE PROVIDED BY A CERTIICATE REQ OBJECT IS NULL
+                oout.writeObject(myReq.getEncrypted(otherCertificate.getPublicKey())); // THIS PUBLIC KEY MUST BE PROVIDED BY A CERTIICATE REQ OBJECT IS NULL
                 if(!getRequest(oin)){
                     System.err.println("Request corrupted the signature is not authentic");//TODO in request verify
                     return;
@@ -76,6 +76,10 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
                 System.err.println(e.getMessage());
             }
         //}
+    }
+    
+    public Certificate getCertificate() {
+        return otherCertificate;
     }
     
     /**
