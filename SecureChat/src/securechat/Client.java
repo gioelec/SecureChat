@@ -39,6 +39,7 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
         super(myKey,issuer, myCertificate, CACertificate);
         this.port = port;
         this.hostName = hostName;
+        System.out.println("NEW CLIENT INITIATED HOSTNAME: "+hostName+" PORT: "+port); /////////////////////////////////////////
     }
 
     public void run(){

@@ -20,6 +20,8 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import cryptoutils.cipherutils.CryptoManager;
+import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.util.concurrent.BlockingQueue;
 import javafx.collections.ObservableList;
 import securechat.model.Message;
@@ -40,6 +42,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
     public Server(int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate){
         super(myKey,issuer, myCertificate, CACertificate);
         this.port = port;
+        System.out.println("SERVER ISTANTIATED @ PORT: "+port);///////////////////////////
     }
 
     public void run(){
@@ -47,13 +50,15 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
             String requestIpAddress = null;
             Object[] confReturn = null;
             try(
-                ServerSocket ss = new ServerSocket(port);
+                ServerSocket ss = new ServerSocket(port, 1, InetAddress.getByName("0.0.0.0"));
+               // ServerSocket ss = new ServerSocket(port);
                 Socket s = ss.accept();
                 InputStream in = s.getInputStream();
                 OutputStream out = s.getOutputStream();
                 ObjectInputStream oin = new ObjectInputStream(in);
                 ObjectOutputStream oout = new ObjectOutputStream(out);
             ){
+                System.out.println("SERVER WAITING FOR REQUEST");///////////////////////////////////////////////
                 String requestHeader = (String)oin.readObject();
                 // CHECK REQUEST HEADER FORMAT
                 //SEND CERTIFICATE

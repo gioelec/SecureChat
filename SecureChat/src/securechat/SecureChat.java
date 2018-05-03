@@ -121,12 +121,6 @@ public class SecureChat extends Application {
 
     private void setOnConnectButtonClickHandler() {
         connectButton.setDisable(true);
-        connectButton.setOnAction(ev -> {
-            Alert a = new Alert(AlertType.INFORMATION);
-            a.setTitle("Connection");
-            a.setContentText("Connecting to "+connectToField.getText());
-            a.showAndWait().filter(response -> response == ButtonType.OK);
-        });
     }    
     
     
