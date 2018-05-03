@@ -27,18 +27,13 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
     private Request myReq;
     private String hostName;
     private Certificate otherCertificate;
-    /**
-     * 
-     * @param port
-     * @param myKey
-     * @param issuer
-     * @param myCertificate
-     * @param CACertificate 
-     */
-    public Client(String hostName, int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate){
+    private String recipient;
+
+    public Client(String hostName, int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate,String recipient){
         super(myKey,issuer, myCertificate, CACertificate);
         this.port = port;
         this.hostName = hostName;
+        this.recipient=recipient;
         System.out.println("NEW CLIENT INITIATED HOSTNAME: "+hostName+" PORT: "+port); /////////////////////////////////////////
     }
 
@@ -49,8 +44,8 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
                 //s.connect(new InetSocketAddress(hostName, port), 2000); //ADD A TIMEOUT OF FEW SECONDS TO LET THE GUI TAKE CONTROL AGAIN
                 InputStream in = s.getInputStream();
                 OutputStream out = s.getOutputStream();
-                ObjectInputStream oin = new ObjectInputStream(in);
                 ObjectOutputStream oout = new ObjectOutputStream(out);
+                ObjectInputStream oin = new ObjectInputStream(in);
             ){
                 System.out.println("Sending request");
                 /*
@@ -58,7 +53,9 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
                     AND USE THE CONTAINING PUBLIC KEY TO ENCRYPT REQUEST
                 */
                 oout.writeObject("<REQUEST>"+issuer+"</REQUEST>");
+                System.out.println("REQUEST SENT");
                 otherCertificate = (Certificate)oin.readObject();
+                System.out.println("CERTIFICATE RECEIVED");
                 myReq = generateRequest();                
                 oout.writeObject(myReq.getEncrypted(otherCertificate.getPublicKey())); // THIS PUBLIC KEY MUST BE PROVIDED BY A CERTIICATE REQ OBJECT IS NULL
                 if(!getRequest(oin)){
@@ -74,7 +71,7 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
                 System.out.println("PROTOCOL ENDED CORRECTLY");
                 success = true;
             }catch(Exception e){
-                System.err.println(e.getMessage());
+                e.printStackTrace();
             }
         //}
     }
@@ -112,7 +109,7 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
      */
     private Request generateRequest() throws CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, SignatureException{
         this.symKey = CryptoManager.generateAES256RandomSecretKey();
-        Request req = new Request(issuer,this.req.getIssuer(),myCertificate,myKey.getEncoded()); //AGAIN HERE THE this.req OBJECT IS NULL, CANNOT ACCESS IT!
+        Request req = new Request(issuer,recipient,myCertificate,symKey); //AGAIN HERE THE this.req OBJECT IS NULL, CANNOT ACCESS IT!
         this.myNonce =req.setRandomChallenge();
         req.sign(myKey);
         return req;

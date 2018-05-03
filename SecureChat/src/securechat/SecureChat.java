@@ -59,7 +59,7 @@ public class SecureChat extends Application {
         String hostName = hostNameElements[0];
         String port = hostNameElements[1];
         System.out.println("Starting handshake protocol with: "+hostName+":"+port);
-        Client connectThreadRunnable = new Client(hostName, Integer.parseInt(port), pk, myUsername, myCertificate, authorityCertificate);
+        Client connectThreadRunnable = new Client(hostName, Integer.parseInt(port), pk, myUsername, myCertificate, authorityCertificate,username);
         Thread connectThread = new Thread(connectThreadRunnable);
         connectThread.start();
         try {

@@ -45,6 +45,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
         System.out.println("SERVER ISTANTIATED @ PORT: "+port);///////////////////////////
     }
 
+    @Override
     public void run(){
         while(true){
             String requestIpAddress = null;
@@ -60,6 +61,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
             ){
                 System.out.println("SERVER WAITING FOR REQUEST");///////////////////////////////////////////////
                 String requestHeader = (String)oin.readObject();
+                System.out.println("RECEIVED REQUEST");
                 // CHECK REQUEST HEADER FORMAT
                 //SEND CERTIFICATE
                 oout.writeObject(myCertificate);
@@ -67,8 +69,8 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                     System.err.println("Request corrupted the signature is not authentic");//TODO in request verify
                     continue;
                 }
-                confReturn = SecureChat.askRequestConfirmation(req);
-                if(!(boolean)confReturn[0]) continue;
+                //confReturn = SecureChat.askRequestConfirmation(req);
+                //if(!(boolean)confReturn[0]) continue;
                 myReq = generateRequest();
                 oout.writeObject(myReq.getEncrypted(req.getPublicKey()));
                 if(!receiveChallenge(oin)){
@@ -79,18 +81,18 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 success = true;
                 requestIpAddress = s.getInetAddress().getHostAddress();
             }catch(Exception e){
-                System.err.println(e.getMessage());
+                e.printStackTrace();
             }
             if(!success) continue;
             System.out.println("Creating messaging thread with: "+requestIpAddress);
-            Receiver messageReceiverRunnable = new Receiver((ObservableList<Message>) confReturn[1], req.getIssuer(), authKey, symKey, 9999+1, requestIpAddress);
-            Sender messageSenderRunnable = new Sender((BlockingQueue<String>) confReturn[2], authKey, symKey, 9999+1, requestIpAddress);
-            Thread receiverThread = new Thread(messageReceiverRunnable);
-            Thread senderThread = new Thread(messageSenderRunnable);
-            senderThread.start();
-            receiverThread.start();
+       //     Receiver messageReceiverRunnable = new Receiver((ObservableList<Message>) confReturn[1], req.getIssuer(), authKey, symKey, 9999+1, requestIpAddress);
+          //  Sender messageSenderRunnable = new Sender((BlockingQueue<String>) confReturn[2], authKey, symKey, 9999+1, requestIpAddress);
+           // Thread receiverThread = new Thread(messageReceiverRunnable);
+           // Thread senderThread = new Thread(messageSenderRunnable);
+            //senderThread.start();
+           // receiverThread.start();
             try {
-                senderThread.join(); receiverThread.join();
+                //senderThread.join(); receiverThread.join();
             } catch(Exception e) {}
         }
     }
@@ -124,7 +126,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
      */
     private Request generateRequest() throws CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, SignatureException{
         this.authKey = CryptoManager.generateAES256RandomSecretKey();
-        Request req = new Request(issuer,this.req.getIssuer(),myCertificate,myKey.getEncoded());
+        Request req = new Request(issuer,this.req.getIssuer(),myCertificate,authKey);
         this.myNonce =req.setRandomChallenge();
         req.sign(myKey);
         return req;
