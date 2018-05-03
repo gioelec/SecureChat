@@ -56,8 +56,10 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
                     ASK CERTIFICATE TO RECIPIENT 
                     AND USE THE CONTAINING PUBLIC KEY TO ENCRYPT REQUEST
                 */
+                oout.writeObject("<REQUEST>"+issuer+"</REQUEST>");
+                Certificate c = (Certificate)oin.readObject();
                 myReq = generateRequest();                
-                oout.writeObject(myReq.getEncrypted(req.getPublicKey())); // THIS PUBLIC KEY MUST BE PROVIDED BY A CERTIICATE REQ OBJECT IS NULL
+                oout.writeObject(myReq.getEncrypted(c.getPublicKey())); // THIS PUBLIC KEY MUST BE PROVIDED BY A CERTIICATE REQ OBJECT IS NULL
                 if(!getRequest(oin)){
                     System.err.println("Request corrupted the signature is not authentic");//TODO in request verify
                     return;

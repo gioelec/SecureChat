@@ -54,6 +54,9 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 ObjectInputStream oin = new ObjectInputStream(in);
                 ObjectOutputStream oout = new ObjectOutputStream(out);
             ){
+                String requestHeader = (String)oin.readObject();
+                // CHECK REQUEST HEADER FORMAT
+                
                 if(!getRequest(oin)){
                     System.err.println("Request corrupted the signature is not authentic");//TODO in request verify
                     continue;
