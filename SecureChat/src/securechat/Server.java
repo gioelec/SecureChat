@@ -27,14 +27,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
     private final int port;
     private Request req;
     private Request myReq;
-    /**
-     * 
-     * @param port
-     * @param myKey
-     * @param issuer
-     * @param myCertificate
-     * @param CACertificate 
-     */
+    
     public Server(int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate){
         super(myKey,issuer, myCertificate, CACertificate);
         this.port = port;
@@ -66,8 +59,8 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                     System.err.println("Request corrupted the signature is not authentic");//TODO in request verify
                     continue;
                 }
-                //confReturn = SecureChat.askRequestConfirmation(req);
-                //if(!(boolean)confReturn[0]) continue;
+            //  confReturn = SecureChat.askRequestConfirmation(req);
+            //  if(!(boolean)confReturn[0]) continue;
                 myReq = generateRequest();
                 oout.writeObject(myReq.getEncrypted(req.getPublicKey()));
                 if(!receiveChallenge(oin)){
@@ -84,45 +77,23 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
             if(!success) continue;
             System.out.println("PROTOCOL ENDED CORRECTLY WITH: "+requestIpAddress+":"+requestPort);
             System.out.println("Creating messaging thread with: "+requestIpAddress+":"+requestPort+1);
-       //     Receiver messageReceiverRunnable = new Receiver((ObservableList<Message>) confReturn[1], req.getIssuer(), authKey, symKey, 9999+1, requestIpAddress);
-          //  Sender messageSenderRunnable = new Sender((BlockingQueue<String>) confReturn[2], authKey, symKey, 9999+1, requestIpAddress);
-           // Thread receiverThread = new Thread(messageReceiverRunnable);
-           // Thread senderThread = new Thread(messageSenderRunnable);
-            //senderThread.start();
-           // receiverThread.start();
+        //  Receiver messageReceiverRunnable = new Receiver((ObservableList<Message>) confReturn[1], req.getIssuer(), authKey, symKey, 9999+1, requestIpAddress);
+        //  Sender messageSenderRunnable = new Sender((BlockingQueue<String>) confReturn[2], authKey, symKey, 9999+1, requestIpAddress);
+        //  Thread receiverThread = new Thread(messageReceiverRunnable);
+        //  Thread senderThread = new Thread(messageSenderRunnable);
+        //  senderThread.start();
+        //  receiverThread.start();
             try {
-                //senderThread.join(); receiverThread.join();
+        //  senderThread.join(); receiverThread.join();
             } catch(Exception e) {}
         }
     }
-    
-    /**
-     * 
-     * @param obj
-     * @return
-     * @throws IOException
-     * @throws ClassNotFoundException
-     * @throws NoSuchAlgorithmException
-     * @throws NoSuchPaddingException
-     * @throws InvalidKeyException
-     * @throws IllegalBlockSizeException
-     * @throws BadPaddingException
-     * @throws CertificateException 
-     */
     private boolean getRequest(ObjectInputStream obj) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, CertificateException{
         this.req = Request.fromEncryptedRequest((byte []) obj.readObject(),myKey); //first we read the length we expect LBA||nb||S(sb,LBA||nb)
         this.symKey = req.getSecretKey();
         return (req.verifySignature() && req.verifyCertificate(CACertificate)); //TODO verify name
     }
     
-    /**
-     * 
-     * @return
-     * @throws CertificateEncodingException
-     * @throws NoSuchAlgorithmException
-     * @throws InvalidKeyException
-     * @throws SignatureException 
-     */
     private Request generateRequest() throws CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, SignatureException{
         this.authKey = CryptoManager.generateAES256RandomSecretKey();
         Request req = new Request(issuer,this.req.getIssuer(),myCertificate,authKey);

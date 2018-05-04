@@ -75,33 +75,11 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
         return otherCertificate;
     }
     
-    /**
-     * 
-     * @param obj
-     * @return
-     * @throws IOException
-     * @throws ClassNotFoundException
-     * @throws NoSuchAlgorithmException
-     * @throws NoSuchPaddingException
-     * @throws InvalidKeyException
-     * @throws IllegalBlockSizeException
-     * @throws BadPaddingException
-     * @throws CertificateException 
-     */
     private boolean getRequest(ObjectInputStream obj) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, CertificateException{
         this.req = Request.fromEncryptedRequest((byte []) obj.readObject(),myKey); //first we read the length we expect LBA||nb||S(sb,LBA||nb)
         this.authKey = req.getSecretKey();
         return (req.verifySignature() && req.verifyCertificate(CACertificate)); //TODO verify name
     }
-    
-    /**
-     * 
-     * @return
-     * @throws CertificateEncodingException
-     * @throws NoSuchAlgorithmException
-     * @throws InvalidKeyException
-     * @throws SignatureException 
-     */
     private Request generateRequest() throws CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, SignatureException{
         this.symKey = CryptoManager.generateAES256RandomSecretKey();
         Request req = new Request(issuer,recipient,myCertificate,symKey); //AGAIN HERE THE this.req OBJECT IS NULL, CANNOT ACCESS IT!
