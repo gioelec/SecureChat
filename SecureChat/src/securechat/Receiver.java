@@ -23,18 +23,23 @@ public class Receiver extends MessagingThread implements Runnable {
         this.sender = sender;
     }
     public void run(){
+        System.out.println("Receiver.run()");
         try(
             ServerSocket ss = new ServerSocket(port);
             Socket s = ss.accept();
             InputStream in = s.getInputStream();
             ObjectInputStream oin = new ObjectInputStream(in);
         ){
+            System.out.println("TRY DONE --receiver");
             String msg = null;
             while (true) {
+                System.out.println("WAITING TO RECEIVE --receiver");
                 msg =new String(SecureEndpoint.secureReceive(oin, symKey, authKey));
+                System.out.println("MSG RECEIVED "+msg+" --receiver");
                 if(msg==null)
                     System.err.println("Other user left you");
                 messageList.add(new Message(sender,new Date(), msg));
+                System.out.println("MSG ADDED TO THE LIST -- receiver");
             }
         } catch (Exception ex) {
             ex.printStackTrace();

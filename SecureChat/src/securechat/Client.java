@@ -22,25 +22,27 @@ import cryptoutils.cipherutils.CryptoManager;
 
 
 public class Client extends HandshakeProtocol implements Runnable{ //Represents Alice in the protocol specifics
-    private final int port;
+    private int remotePort;
+    private int localPort;
     private Request req;
     private Request myReq;
     private String hostName;
     private Certificate otherCertificate;
     private String recipient;
 
-    public Client(String hostName, int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate,String recipient){
+    public Client(String hostName, int remotePort,int localPort, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate,String recipient){
         super(myKey,issuer, myCertificate, CACertificate);
-        this.port = port;
+        this.remotePort = remotePort;
         this.hostName = hostName;
         this.recipient=recipient;
-        System.out.println("NEW CLIENT INITIATED HOSTNAME: "+hostName+" PORT: "+port); /////////////////////////////////////////
+        this.localPort = localPort;
+        System.out.println("NEW CLIENT INITIATED HOSTNAME: "+hostName+"REMOTE PORT: "+remotePort+ " LOCALPORT "+localPort); /////////////////////////////////////////
     }
 
     public void run(){
         //while(true){
             try(
-                Socket s = new Socket(hostName,port);
+                Socket s = new Socket(hostName,remotePort);
                 InputStream in = s.getInputStream();
                 OutputStream out = s.getOutputStream();
                 ObjectOutputStream oout = new ObjectOutputStream(out);
@@ -57,13 +59,13 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
                     System.err.println("Request corrupted the signature is not authentic");//TODO in request verify
                     return;
                 }
-                System.out.println("Got reply");                
-                sendChallenge(oout,req.getChallengeNonce(),port);
+                System.out.println("Got reply -- Sending port "+localPort);                
+                sendChallenge(oout,req.getChallengeNonce(),localPort);
                 if(!(boolean)receiveChallenge(oin)[0]){
                     System.err.println("Challenge not fulfilled by the other user");
                     return;
                 }
-                System.out.println("PROTOCOL ENDED CORRECTLY WITH: "+hostName+":"+port);
+                System.out.println("PROTOCOL ENDED CORRECTLY WITH: "+hostName+":"+remotePort);
                 success = true;
             }catch(Exception e){
                 e.printStackTrace();
@@ -82,7 +84,7 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
     }
     private Request generateRequest() throws CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, SignatureException{
         this.symKey = CryptoManager.generateAES256RandomSecretKey();
-        Request req = new Request(issuer,recipient,myCertificate,symKey); //AGAIN HERE THE this.req OBJECT IS NULL, CANNOT ACCESS IT!
+        Request req = new Request(issuer,recipient,myCertificate,symKey); 
         this.myNonce =req.setRandomChallenge();
         req.sign(myKey);
         return req;

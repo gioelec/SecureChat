@@ -10,6 +10,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 
 public class Sender extends MessagingThread implements Runnable {
     private BlockingQueue<String> queue;
@@ -19,15 +20,20 @@ public class Sender extends MessagingThread implements Runnable {
     }
     public void run(){
         String msg;
+        System.out.println("STARTED SENDER RUN");
         while (true) { 
             try (Socket s = new Socket(hostName,port);
                 OutputStream out = s.getOutputStream();
                 ObjectOutputStream oout = new ObjectOutputStream(out);)
             {
+                System.out.println("WAITING TO GET MSG FROM QUEUE--sender"); 
                 msg = queue.take();
+                System.out.println("MESSAGE TAKEN--sender");
                 SecureEndpoint.secureSend(msg.getBytes(), oout, symKey, authKey);
+                System.out.println("MESSAGE SENT---sender");
             } catch (Exception ex) {
                 ex.printStackTrace();
+                break;   
             }   
         }
         

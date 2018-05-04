@@ -76,7 +76,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                     System.err.println("Challenge not fulfilled by the other user");
                     continue;
                 }
-                clientPort = (int) receivedChallenge[1];
+                clientPort = (int)receivedChallenge[1];
                 sendChallenge(oout,req.getChallengeNonce(),-1);
                 success = true;
                 requestIpAddress = s.getInetAddress().getHostAddress();
@@ -85,10 +85,10 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 e.printStackTrace();
             }
             if(!success) continue;
-            System.out.println("PROTOCOL ENDED CORRECTLY WITH: "+requestIpAddress+":"+requestPort);
-            System.out.println("Creating messaging thread with: "+requestIpAddress+":"+requestPort+1);
-            Receiver messageReceiverRunnable = new Receiver(messageList, req.getIssuer(), authKey, symKey, 9999+1, requestIpAddress);
-            Sender messageSenderRunnable = new Sender(sendBuffer, authKey, symKey, 9999+1, requestIpAddress);
+            System.out.println("PROTOCOL ENDED CORRECTLY WITH: "+requestIpAddress+":"+clientPort);
+            System.out.println("Creating messaging thread with: "+requestIpAddress+":"+clientPort+1);
+            Receiver messageReceiverRunnable = new Receiver(messageList, req.getIssuer(), authKey, symKey, port+1, requestIpAddress);
+            Sender messageSenderRunnable = new Sender(sendBuffer, authKey, symKey, clientPort+1, requestIpAddress);
             Thread receiverThread = new Thread(messageReceiverRunnable);
             Thread senderThread = new Thread(messageSenderRunnable);
             senderThread.start();

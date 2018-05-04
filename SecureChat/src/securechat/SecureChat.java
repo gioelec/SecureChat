@@ -59,7 +59,7 @@ public class SecureChat extends Application {
         String hostName = hostNameElements[0];
         String port = hostNameElements[1];
         System.out.println("Starting handshake protocol with: "+hostName+":"+port);
-        Client connectThreadRunnable = new Client(hostName, Integer.parseInt(port), pk, myUsername, myCertificate, authorityCertificate,username);
+        Client connectThreadRunnable = new Client(hostName, Integer.parseInt(port),listeningPort, pk, myUsername, myCertificate, authorityCertificate,username);
         Thread connectThread = new Thread(connectThreadRunnable);
         connectThread.start();
         try {
@@ -102,7 +102,9 @@ public class SecureChat extends Application {
                 /*
                 ////HERE WE ACTUALLY SEND THE MESSAGE OVER THE SECURE CHANNEL
                 */
-                myL.add(new Message(myUsername,new Date(),text));
+                Message m = new Message(myUsername,new Date(),text);
+                myL.add(m);
+                sendBuffer.add(m.getContent());
                 messageArea.clear();         
                 sendButton.setDisable(true);
             }
@@ -113,7 +115,9 @@ public class SecureChat extends Application {
         sendButton.setDisable(true);
         sendButton.setOnAction(ev -> {
             String text = messageArea.getText();
-            myL.add(new Message(myUsername,new Date(),text));
+            Message m = new Message(myUsername,new Date(),text);
+            myL.add(m);
+            sendBuffer.add(m.getContent());
             messageArea.clear();            
             sendButton.setDisable(true);
         });

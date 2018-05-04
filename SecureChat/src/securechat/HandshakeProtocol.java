@@ -33,22 +33,24 @@ public class HandshakeProtocol {
             int receivedNonce =MessageBuilder.toInt(MessageBuilder.extractFirstBytes(decryptedMsg, 4));
             System.out.println("RECEIVED:"+receivedNonce);
             System.out.println("EXPECTED:"+myNonce);
-            if(decryptedMsg.length>4)
-               returns[1] = MessageBuilder.extractLastBytes(decryptedMsg, 4);
-            returns[0] = (myNonce == receivedNonce);      
-        }
-        returns[0] = false;
+            if(decryptedMsg.length>4){
+               returns[1] = MessageBuilder.toInt(MessageBuilder.extractLastBytes(decryptedMsg, 4));
+               System.out.println("CLIENT PORT "+returns[1]);
+            }
+            returns[0] = (myNonce == receivedNonce);     
+        }else
+            returns[0] = false;
         return returns;
     }
     protected boolean sendChallenge(ObjectOutputStream oout,int receivedNonce,int port) throws NoSuchAlgorithmException, InvalidKeyException{
+        System.out.println("PORT TO SEND: "+port);
         byte[] myNonce = MessageBuilder.toByteArray(receivedNonce);
-        byte[] msg = null;
+        byte[] msg;
         if(port!=-1){
             byte[] clientPort = MessageBuilder.toByteArray(port);
-            byte[] nonce_port = MessageBuilder.concatBytes(myNonce,clientPort);
-            msg = MessageBuilder.concatBytes(nonce_port,HashManager.doMAC(nonce_port, authKey, SecureEndpoint.AUTH_ALG));
+            msg = MessageBuilder.concatBytes(myNonce,clientPort);
         }else
-            msg = MessageBuilder.concatBytes(myNonce,HashManager.doMAC(myNonce, authKey, SecureEndpoint.AUTH_ALG));
+            msg = myNonce;
         return SecureEndpoint.secureSend(msg, oout, symKey, authKey);
     }
     public byte[] getSymKey(){
