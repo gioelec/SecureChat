@@ -21,7 +21,8 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import cryptoutils.cipherutils.CryptoManager;
 import java.net.InetAddress;
-import java.util.ArrayList;
+import java.time.Instant;
+import java.util.Date;
 import java.util.concurrent.BlockingQueue;
 import javafx.collections.ObservableList;
 import securechat.model.Message;
@@ -38,6 +39,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
     public Server(int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate, ObservableList<Message> messageList, BlockingQueue<String> sendBuffer){
         super(myKey,issuer, myCertificate, CACertificate);
         this.port = port;
+        System.out.println(messageList==null);
         this.messageList = messageList;
         this.sendBuffer = sendBuffer;
         System.out.println("SERVER ISTANTIATED @ PORT: "+port);///////////////////////////
@@ -59,8 +61,16 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 ObjectOutputStream oout = new ObjectOutputStream(out);
             ){
                 System.out.println("SERVER WAITING FOR REQUEST");///////////////////////////////////////////////
-                String requestHeader = (String)oin.readObject();
+                String requestHeader = (String)oin.readObject();        
+                
                 System.out.println("RECEIVED REQUEST");
+                try {
+                    messageList.add(new Message(requestHeader+" Y/N?", new Date(), "Answer with a message...",1));
+                    System.out.println("WAITING FOR RESPONSE...");
+                    boolean res = SharedState.getInstance().waitForResponse();
+                    System.out.println("RESPONSE: "+res);                    
+                    if(!res) continue;
+                } catch(Exception e) {e.printStackTrace();}                
                 // CHECK REQUEST HEADER FORMAT
                 //SEND CERTIFICATE
                 oout.writeObject(myCertificate);
@@ -68,8 +78,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                     System.err.println("Request corrupted the signature is not authentic");//TODO in request verify
                     continue;
                 }
-            //  confReturn = SecureChat.askRequestConfirmation(req);
-            //  if(!(boolean)confReturn[0]) continue;
+
                 myReq = generateRequest();
                 oout.writeObject(myReq.getEncrypted(req.getPublicKey()));
                 Object[] receivedChallenge = receiveChallenge(oin);

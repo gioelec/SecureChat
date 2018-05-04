@@ -15,7 +15,6 @@ public class Sender extends MessagingThread implements Runnable {
     public void run(){
         String msg;
         System.out.println("STARTED SENDER RUN");
-        
             try (Socket s = new Socket(hostName,port);
                 OutputStream out = s.getOutputStream();
                 ObjectOutputStream oout = new ObjectOutputStream(out);)
@@ -28,9 +27,7 @@ public class Sender extends MessagingThread implements Runnable {
                     System.out.println("MESSAGE SENT---sender");
                 }
             } catch (Exception ex) {
-                System.out.println("SENDER EXCEPTION");
-                ex.printStackTrace();  
+                System.out.println("SENDER EXCEPTION -- "+ex.getMessage());
             }        
     }
-    
 }

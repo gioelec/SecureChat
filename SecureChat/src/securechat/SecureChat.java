@@ -7,12 +7,10 @@ import java.io.FileInputStream;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.*;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Properties;
 import java.util.concurrent.*;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.collections.*;
 import javafx.geometry.*;
 import javafx.scene.Scene;
@@ -28,7 +26,7 @@ public class SecureChat extends Application {
     private final Label connectToLabel = new Label("NAME AND HOST TO CONNECT WITH");
     private final TextField connectToField = new TextField();
     private final Button connectButton = new Button("CONNECT");
-    private final static ObservableList<Message> myL = FXCollections.observableArrayList();
+    private final ObservableList<Message> myL = FXCollections.observableArrayList();
     private final ListView<Message> l = new ListView<>(myL);
     private static BlockingQueue<String> sendBuffer = new LinkedBlockingQueue<>();
     private final TextArea messageArea = new TextArea();
@@ -65,7 +63,7 @@ public class SecureChat extends Application {
         Thread connectThread = new Thread(connectThreadRunnable);
         connectThread.start();
         try {
-            connectThread.join(3000);
+            connectThread.join(10000);
             if(!connectThreadRunnable.getHandshakeResult()) {
                 connectThread.interrupt();
                 (new Alert(AlertType.ERROR,"Could not connect")).showAndWait().filter(res -> res == ButtonType.OK);
@@ -100,18 +98,24 @@ public class SecureChat extends Application {
         messageArea.setOnKeyPressed((KeyEvent keyEvent) -> {
             KeyCombination submit = new KeyCodeCombination(KeyCode.ENTER, KeyCodeCombination.SHIFT_DOWN);
             if (submit.match(keyEvent))  {
-                String text = messageArea.getText();
-                if(text.isEmpty()) return;
-                /*
-                ////HERE WE ACTUALLY SEND THE MESSAGE OVER THE SECURE CHANNEL
-                */
-                Message m = new Message(myUsername,new Date(),text);
-                myL.add(m);
-                sendBuffer.add(m.getContent());
-                messageArea.clear();         
-                sendButton.setDisable(true);
+               handleMessageSend();
             }
         });
+    }
+    
+    private void handleMessageSend() {
+        String text = messageArea.getText();
+        if(SharedState.getInstance().isRequestPending()) {
+            //Answering to a request
+            SharedState.getInstance().setResponse(text.equals("Y"));
+            return;
+        }
+        if(text.isEmpty()) return;
+        Message m = new Message(myUsername,new Date(),text);
+        myL.add(m);
+        sendBuffer.add(m.getContent());
+        messageArea.clear();         
+        sendButton.setDisable(true);
     }
     
     private void setOnSendButtonClickHandler() {
@@ -184,17 +188,6 @@ public class SecureChat extends Application {
         protocolServerThread.start();
     }
     
-    public static Object[] askRequestConfirmation(Request request) {
-        Alert confAlert = new Alert(AlertType.CONFIRMATION);
-        confAlert.setTitle("SecureChat");
-        confAlert.setHeaderText("Incoming request");
-        confAlert.setContentText("Request from"+request.getIssuer()+"\nCertificate released to: "+request.getCertificateSubject()+"\nCertificate released by: "+request.getCertificateIssuer()+"\nAccept?");
-        Object[] returns = new Object[3];
-        returns[0] = (confAlert.showAndWait().get() == ButtonType.OK);
-    //    returns[1] = myL;    // pass through constructor?
-    //    returns[2] = sendBuffer; //idem?
-        return returns;
-    }
     
     private void loadCryptoSpecs() {
         try(FileInputStream fis = new FileInputStream("config.properties");) {

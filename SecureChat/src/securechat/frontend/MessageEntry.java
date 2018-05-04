@@ -1,7 +1,11 @@
 package securechat.frontend;
 
+import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -30,6 +34,9 @@ public class MessageEntry extends ListCell<Message> {
             user.setText(m.getUser());
             date.setText(m.getDate().toString());
             content.setText(m.getContent());
+            if(m.getType() == 1) {
+                wrapper.setBackground(new Background(new BackgroundFill(Color.GREENYELLOW, CornerRadii.EMPTY, Insets.EMPTY)));
+            }
         } else {
             //NOTHING
         }
