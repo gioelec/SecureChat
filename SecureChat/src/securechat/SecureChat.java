@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.concurrent.*;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.*;
 import javafx.geometry.*;
 import javafx.scene.Scene;
@@ -78,6 +79,7 @@ public class SecureChat extends Application {
             Thread senderThread = new Thread(messageSenderRunnable);
             receiverThread.start();
             senderThread.start();
+            
         } catch(Exception e) {
             e.printStackTrace();
         }

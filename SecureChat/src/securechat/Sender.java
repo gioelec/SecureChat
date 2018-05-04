@@ -15,22 +15,22 @@ public class Sender extends MessagingThread implements Runnable {
     public void run(){
         String msg;
         System.out.println("STARTED SENDER RUN");
-        while (true) { 
+        
             try (Socket s = new Socket(hostName,port);
                 OutputStream out = s.getOutputStream();
                 ObjectOutputStream oout = new ObjectOutputStream(out);)
             {
-                System.out.println("WAITING TO GET MSG FROM QUEUE--sender"); 
-                msg = queue.take();
-                System.out.println("MESSAGE TAKEN--sender");
-                SecureEndpoint.secureSend(msg.getBytes(), oout, symKey, authKey);
-                System.out.println("MESSAGE SENT---sender");
+                while (true) { 
+                    System.out.println("WAITING TO GET MSG FROM QUEUE--sender"); 
+                    msg = queue.take();
+                    System.out.println("MESSAGE TAKEN--sender");
+                    SecureEndpoint.secureSend(msg.getBytes(), oout, symKey, authKey);
+                    System.out.println("MESSAGE SENT---sender");
+                }
             } catch (Exception ex) {
-                ex.printStackTrace();
-                break;   
-            }   
-        }
-        
+                System.out.println("SENDER EXCEPTION");
+                ex.printStackTrace();  
+            }        
     }
     
 }

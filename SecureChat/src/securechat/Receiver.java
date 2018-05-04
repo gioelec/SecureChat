@@ -33,14 +33,22 @@ public class Receiver extends MessagingThread implements Runnable {
             while (true) {
                 System.out.println("WAITING TO RECEIVE --receiver");
                 rcv = SecureEndpoint.secureReceive(oin, symKey, authKey);
-                if(rcv==null)
+                if(rcv==null){
                     System.err.println("Other user left you");
+                    return;
+                }
                 msg = new String(rcv);
                 System.out.println("MSG RECEIVED "+msg+" --receiver");
-                messageList.add(new Message(sender,new Date(), msg));
+                try{
+                    messageList.add(new Message(sender,new Date(), msg));
+                }catch(Exception i){
+                    
+                    System.err.println("SHHHHHHH!!!!!!!");
+                }
                 System.out.println("MSG ADDED TO THE LIST -- receiver");
-            }
-        } catch (Exception ex) {
+            }   
+        }catch (Exception ex) {
+            System.out.println("RECEIVER EXCEPTION");
             ex.printStackTrace();
         }    
     }
