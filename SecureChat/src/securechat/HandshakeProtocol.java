@@ -1,7 +1,6 @@
 package securechat;
 
 import cryptoutils.communication.SecureEndpoint;
-import cryptoutils.hashutils.HashManager;
 import cryptoutils.messagebuilder.MessageBuilder;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;

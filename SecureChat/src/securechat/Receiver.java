@@ -1,16 +1,11 @@
 package securechat;
 
 import cryptoutils.communication.SecureEndpoint;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Date;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.collections.ObservableList;
 import securechat.model.Message;
 
@@ -22,6 +17,7 @@ public class Receiver extends MessagingThread implements Runnable {
         this.messageList = messageList;
         this.sender = sender;
     }
+    @Override
     public void run(){
         System.out.println("Receiver.run()");
         try(
