@@ -58,8 +58,8 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
                     return;
                 }
                 System.out.println("Got reply");                
-                sendChallenge(oout,req.getChallengeNonce());
-                if(!receiveChallenge(oin)){
+                sendChallenge(oout,req.getChallengeNonce(),port);
+                if(!(boolean)receiveChallenge(oin)[0]){
                     System.err.println("Challenge not fulfilled by the other user");
                     return;
                 }

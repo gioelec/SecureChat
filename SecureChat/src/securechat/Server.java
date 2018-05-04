@@ -21,16 +21,24 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import cryptoutils.cipherutils.CryptoManager;
 import java.net.InetAddress;
+import java.util.concurrent.BlockingQueue;
+import javafx.collections.ObservableList;
+import securechat.model.Message;
 
 
 public class Server extends HandshakeProtocol implements Runnable{ //Represents Alice in the protocol specifics
     private final int port;
     private Request req;
     private Request myReq;
+    private BlockingQueue<String> sendBuffer;
+    private ObservableList<Message> messageList;
+    private int clientPort;
     
-    public Server(int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate){
+    public Server(int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate, ObservableList<Message> messageList, BlockingQueue<String> sendBuffer){
         super(myKey,issuer, myCertificate, CACertificate);
         this.port = port;
+        this.messageList = messageList;
+        this.sendBuffer = sendBuffer;
         System.out.println("SERVER ISTANTIATED @ PORT: "+port);///////////////////////////
     }
 
@@ -63,11 +71,13 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
             //  if(!(boolean)confReturn[0]) continue;
                 myReq = generateRequest();
                 oout.writeObject(myReq.getEncrypted(req.getPublicKey()));
-                if(!receiveChallenge(oin)){
+                Object[] receivedChallenge = receiveChallenge(oin);
+                if(!(boolean)receivedChallenge[0]){
                     System.err.println("Challenge not fulfilled by the other user");
                     continue;
                 }
-                sendChallenge(oout,req.getChallengeNonce());
+                clientPort = (int) receivedChallenge[1];
+                sendChallenge(oout,req.getChallengeNonce(),-1);
                 success = true;
                 requestIpAddress = s.getInetAddress().getHostAddress();
                 requestPort = s.getPort();
@@ -77,14 +87,14 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
             if(!success) continue;
             System.out.println("PROTOCOL ENDED CORRECTLY WITH: "+requestIpAddress+":"+requestPort);
             System.out.println("Creating messaging thread with: "+requestIpAddress+":"+requestPort+1);
-        //  Receiver messageReceiverRunnable = new Receiver((ObservableList<Message>) confReturn[1], req.getIssuer(), authKey, symKey, 9999+1, requestIpAddress);
-        //  Sender messageSenderRunnable = new Sender((BlockingQueue<String>) confReturn[2], authKey, symKey, 9999+1, requestIpAddress);
-        //  Thread receiverThread = new Thread(messageReceiverRunnable);
-        //  Thread senderThread = new Thread(messageSenderRunnable);
-        //  senderThread.start();
-        //  receiverThread.start();
+            Receiver messageReceiverRunnable = new Receiver(messageList, req.getIssuer(), authKey, symKey, 9999+1, requestIpAddress);
+            Sender messageSenderRunnable = new Sender(sendBuffer, authKey, symKey, 9999+1, requestIpAddress);
+            Thread receiverThread = new Thread(messageReceiverRunnable);
+            Thread senderThread = new Thread(messageSenderRunnable);
+            senderThread.start();
+            receiverThread.start();
             try {
-        //  senderThread.join(); receiverThread.join();
+                senderThread.join(); receiverThread.join();
             } catch(Exception e) {}
         }
     }

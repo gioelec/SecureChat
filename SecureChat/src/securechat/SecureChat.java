@@ -69,15 +69,14 @@ public class SecureChat extends Application {
                 (new Alert(AlertType.ERROR,"Could not connect")).showAndWait().filter(res -> res == ButtonType.OK);
                 return;
             };
-            return;
-            /*byte[] macKey = connectThreadRunnable.getAuthKey();
+            byte[] macKey = connectThreadRunnable.getAuthKey();
             byte[] symKey = connectThreadRunnable.getSymKey();
             Receiver messageReceiverRunnable = new Receiver(myL, username, macKey, symKey, listeningPort+1, hostName);
             Sender messageSenderRunnable = new Sender(sendBuffer, macKey, symKey, Integer.parseInt(port)+1, hostName);
             Thread receiverThread = new Thread(messageReceiverRunnable);
             Thread senderThread = new Thread(messageSenderRunnable);
             receiverThread.start();
-            senderThread.start();*/
+            senderThread.start();
         } catch(Exception e) {
             e.printStackTrace();
         }
@@ -173,7 +172,7 @@ public class SecureChat extends Application {
         loadCryptoSpecs();
         /* HERE SOMETHING TO START THREADS AND THINGS */
         System.out.println("Protocol listener started...");
-        Server protocolServerRunnable = new Server(listeningPort,pk,myUsername,myCertificate,authorityCertificate);
+        Server protocolServerRunnable = new Server(listeningPort,pk,myUsername,myCertificate,authorityCertificate,myL,sendBuffer);
         Thread protocolServerThread = new Thread(protocolServerRunnable);
         protocolServerThread.start();
     }
@@ -185,8 +184,8 @@ public class SecureChat extends Application {
         confAlert.setContentText("Request from"+request.getIssuer()+"\nCertificate released to: "+request.getCertificateSubject()+"\nCertificate released by: "+request.getCertificateIssuer()+"\nAccept?");
         Object[] returns = new Object[3];
         returns[0] = (confAlert.showAndWait().get() == ButtonType.OK);
-        returns[1] = myL;
-        returns[2] = sendBuffer;
+    //    returns[1] = myL;    // pass through constructor?
+    //    returns[2] = sendBuffer; //idem?
         return returns;
     }
     
