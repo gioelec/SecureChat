@@ -5,14 +5,15 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Date;
 import javafx.collections.ObservableList;
 import securechat.model.Message;
 
 public class Receiver extends MessagingThread implements Runnable {
-    private ObservableList<Message> messageList;
+    private ArrayList<Message> messageList;
     private String sender;
-    public Receiver(ObservableList<Message> messageList,String sender,byte[] authKey, byte[] symKey, int port, String hostName) {
+    public Receiver(ArrayList<Message> messageList,String sender,byte[] authKey, byte[] symKey, int port, String hostName) {
         super(authKey, symKey, port, hostName);
         this.messageList = messageList;
         this.sender = sender;

@@ -21,6 +21,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import cryptoutils.cipherutils.CryptoManager;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import javafx.collections.ObservableList;
 import securechat.model.Message;
@@ -31,10 +32,10 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
     private Request req;
     private Request myReq;
     private BlockingQueue<String> sendBuffer;
-    private ObservableList<Message> messageList;
+    private ArrayList<Message> messageList;
     private int clientPort;
     
-    public Server(int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate, ObservableList<Message> messageList, BlockingQueue<String> sendBuffer){
+    public Server(int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate, ArrayList<Message> messageList, BlockingQueue<String> sendBuffer){
         super(myKey,issuer, myCertificate, CACertificate);
         this.port = port;
         this.messageList = messageList;

@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.*;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Properties;
 import java.util.concurrent.*;
@@ -26,7 +27,8 @@ public class SecureChat extends Application {
     private final Label connectToLabel = new Label("NAME AND HOST TO CONNECT WITH");
     private final TextField connectToField = new TextField();
     private final Button connectButton = new Button("CONNECT");
-    private final static ObservableList<Message> myL = FXCollections.observableArrayList();
+    private final static ArrayList<Message> arrayList = new ArrayList<>();
+    private final static ObservableList<Message> myL = FXCollections.observableArrayList(arrayList);
     private final ListView<Message> l = new ListView<>(myL);
     private static BlockingQueue<String> sendBuffer = new LinkedBlockingQueue<>();
     private final TextArea messageArea = new TextArea();
@@ -71,7 +73,7 @@ public class SecureChat extends Application {
             };
             byte[] macKey = connectThreadRunnable.getAuthKey();
             byte[] symKey = connectThreadRunnable.getSymKey();
-            Receiver messageReceiverRunnable = new Receiver(myL, username, macKey, symKey, listeningPort+1, hostName);
+            Receiver messageReceiverRunnable = new Receiver(arrayList, username, macKey, symKey, listeningPort+1, hostName);
             Sender messageSenderRunnable = new Sender(sendBuffer, macKey, symKey, Integer.parseInt(port)+1, hostName);
             Thread receiverThread = new Thread(messageReceiverRunnable);
             Thread senderThread = new Thread(messageSenderRunnable);
@@ -176,7 +178,7 @@ public class SecureChat extends Application {
         loadCryptoSpecs();
         /* HERE SOMETHING TO START THREADS AND THINGS */
         System.out.println("Protocol listener started...");
-        Server protocolServerRunnable = new Server(listeningPort,pk,myUsername,myCertificate,authorityCertificate,myL,sendBuffer);
+        Server protocolServerRunnable = new Server(listeningPort,pk,myUsername,myCertificate,authorityCertificate,arrayList,sendBuffer);
         Thread protocolServerThread = new Thread(protocolServerRunnable);
         protocolServerThread.start();
     }
