@@ -66,7 +66,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 System.out.println("RECEIVED REQUEST");
                 try {
                     SharedState.getInstance().setPendingRequest(true);
-                    messageList.add(new Message(requestHeader+" Y/N?", new Date(), "Answer with a message...",1));
+                    messageList.add(new Message(requestHeader, new Date(), "Do you want to connect? Y/N?",1));
                     System.out.println("WAITING FOR RESPONSE...");
                     boolean res = SharedState.getInstance().waitForResponse();
                     System.out.println("RESPONSE: "+res);                    

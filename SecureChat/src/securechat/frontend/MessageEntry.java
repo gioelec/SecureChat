@@ -14,16 +14,15 @@ import javafx.scene.text.Text;
 import securechat.model.Message;
 
 public class MessageEntry extends ListCell<Message> {
-    private VBox wrapper = new VBox(2);
+    private VBox wrapper = new VBox();
     private Label user = new Label();
     private Label date = new Label();
     private Text content = new Text();
     
     public MessageEntry() {
         user.setFont(Font.font("Verdana", FontWeight.BOLD, 12));      
-        date.setFont(Font.font("Verdana", FontWeight.LIGHT,10));
+        date.setFont(Font.font("Verdana", FontWeight.LIGHT,9));
         date.setTextFill(Color.GRAY);
-        
         wrapper.getChildren().addAll(user,date,content);
     }
     
@@ -34,9 +33,17 @@ public class MessageEntry extends ListCell<Message> {
             user.setText(m.getUser());
             date.setText(m.getDate().toString());
             content.setText(m.getContent());
+            if(m.getType() != 0) {
+                user.setTextFill(Color.WHITESMOKE); 
+                content.setFill(Color.WHITESMOKE);
+                date.setTextFill(Color.WHITESMOKE);
+            } else {
+                this.getStyleClass().add("message");
+            }
             switch(m.getType()) {
-                case 1: wrapper.setBackground(new Background(new BackgroundFill(Color.ROYALBLUE, CornerRadii.EMPTY, Insets.EMPTY)));break;
-                case 2: wrapper.setBackground(new Background(new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY)));break;
+                case 1: this.setBackground(new Background(new BackgroundFill(Color.BLUE, CornerRadii.EMPTY, Insets.EMPTY)));break;
+                case 2: this.setBackground(new Background(new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY)));break;
+                case 3: this.setBackground(new Background(new BackgroundFill(Color.GREEN, CornerRadii.EMPTY, Insets.EMPTY)));break;
                 default: break;
             }
         } else {

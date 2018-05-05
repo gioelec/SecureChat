@@ -75,9 +75,9 @@ public class SecureChat extends Application {
             Sender messageSenderRunnable = new Sender(sendBuffer, macKey, symKey, Integer.parseInt(port)+1, hostName);
             Thread receiverThread = new Thread(messageReceiverRunnable);
             Thread senderThread = new Thread(messageSenderRunnable);
+            myL.add(new Message(username,new Date(),"You're connected",3));
             receiverThread.start();
             senderThread.start();
-            
         } catch(Exception e) {
             e.printStackTrace();
         }
@@ -93,18 +93,22 @@ public class SecureChat extends Application {
         });
     }
     
+    private void handleRequestAnswer(String answer) {
+        System.out.println("There is a pending request...");
+        SharedState.getInstance().setResponse(answer.equals("Y"));
+        System.out.println("Waiting for HP protocol to terminate...");
+        boolean protocolResult = SharedState.getInstance().waitProtocol();
+        if(protocolResult) myL.add(new Message("...",new Date(),"You're connected",3));
+        else myL.add(new Message("...",new Date(),"Connection failed",2));
+
+        messageArea.clear();
+    }
+    
     private void handleMessageSend() {
         String text = messageArea.getText();
         if(text.isEmpty()) return;
         if(SharedState.getInstance().isRequestPending()) {
-            //Answering to a request
-            System.out.println("There is a pending request...");
-            SharedState.getInstance().setResponse(text.equals("Y"));
-            System.out.println("Waiting for HP protocol to terminate...");
-            boolean protocolResult = SharedState.getInstance().waitProtocol();
-            if(protocolResult) (new Alert(AlertType.INFORMATION,"Connected")).showAndWait().filter(b -> b == ButtonType.OK);
-            else (new Alert(AlertType.ERROR,"Connection failed")).showAndWait().filter(b -> b == ButtonType.OK);
-            messageArea.clear();
+            handleRequestAnswer(text);
             return;
         }
         Message m = new Message(myUsername,new Date(),text);
@@ -143,7 +147,7 @@ public class SecureChat extends Application {
         return root;
     }
     
-    private void configureListView() {
+    private void configureListView() {        
         l.setCellFactory((ListView<Message> p) -> {
             MessageEntry cell = new MessageEntry();
             return cell;
@@ -158,7 +162,6 @@ public class SecureChat extends Application {
         HBox connectControls = buildConnectControls();
         configureListView();
         GridPane root = buildSceneGrid(connectControls);
-       
         Scene scene = new Scene(root, 320, 600);
         primaryStage.setTitle("SecureChat - Disconnected");
         primaryStage.setResizable(false);
@@ -167,8 +170,8 @@ public class SecureChat extends Application {
         root.requestFocus();
         l.scrollTo(myL.size()-1);
         appStage = primaryStage;
+        scene.getStylesheets().add("file:./style.css");        
         loadCryptoSpecs();
-        /* HERE SOMETHING TO START THREADS AND THINGS */
         System.out.println("Protocol listener started...");
         Server protocolServerRunnable = new Server(listeningPort,pk,myUsername,myCertificate,authorityCertificate,myL,sendBuffer);
         Thread protocolServerThread = new Thread(protocolServerRunnable);
