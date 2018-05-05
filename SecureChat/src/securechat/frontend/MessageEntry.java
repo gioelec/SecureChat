@@ -34,8 +34,10 @@ public class MessageEntry extends ListCell<Message> {
             user.setText(m.getUser());
             date.setText(m.getDate().toString());
             content.setText(m.getContent());
-            if(m.getType() == 1) {
-                wrapper.setBackground(new Background(new BackgroundFill(Color.GREENYELLOW, CornerRadii.EMPTY, Insets.EMPTY)));
+            switch(m.getType()) {
+                case 1: wrapper.setBackground(new Background(new BackgroundFill(Color.ROYALBLUE, CornerRadii.EMPTY, Insets.EMPTY)));break;
+                case 2: wrapper.setBackground(new Background(new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY)));break;
+                default: break;
             }
         } else {
             //NOTHING

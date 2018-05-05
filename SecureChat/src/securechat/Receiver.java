@@ -32,6 +32,7 @@ public class Receiver extends MessagingThread implements Runnable {
                 rcv = SecureEndpoint.secureReceive(oin, symKey, authKey);
                 if(rcv==null){
                     System.err.println("Other user left you");
+                    messageList.add(new Message(sender,new Date(),"Connection closed",2));
                     return;
                 }
                 msg = new String(rcv);

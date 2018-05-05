@@ -65,6 +65,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 
                 System.out.println("RECEIVED REQUEST");
                 try {
+                    SharedState.getInstance().setPendingRequest(true);
                     messageList.add(new Message(requestHeader+" Y/N?", new Date(), "Answer with a message...",1));
                     System.out.println("WAITING FOR RESPONSE...");
                     boolean res = SharedState.getInstance().waitForResponse();
@@ -92,6 +93,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 requestIpAddress = s.getInetAddress().getHostAddress();
                 requestPort = s.getPort();
             }catch(Exception e){
+                SharedState.getInstance().protocolDone(false);
                 e.printStackTrace();
             }
             if(!success) continue;
@@ -103,6 +105,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
             Thread senderThread = new Thread(messageSenderRunnable);
             senderThread.start();
             receiverThread.start();
+            SharedState.getInstance().protocolDone(success);
             try {
                 senderThread.join(); receiverThread.join();
             } catch(Exception e) {}

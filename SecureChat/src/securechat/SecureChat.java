@@ -68,7 +68,7 @@ public class SecureChat extends Application {
                 connectThread.interrupt();
                 (new Alert(AlertType.ERROR,"Could not connect")).showAndWait().filter(res -> res == ButtonType.OK);
                 return;
-            };
+            }
             byte[] macKey = connectThreadRunnable.getAuthKey();
             byte[] symKey = connectThreadRunnable.getSymKey();
             Receiver messageReceiverRunnable = new Receiver(myL, username, macKey, symKey, listeningPort+1, hostName);
@@ -91,43 +91,30 @@ public class SecureChat extends Application {
             if(connectToField.getText().isEmpty()) connectButton.setDisable(true);
             else connectButton.setDisable(false);
         });
-        messageArea.setOnKeyTyped((KeyEvent event) -> {
-            if(messageArea.getText().isEmpty()) sendButton.setDisable(true);
-            else sendButton.setDisable(false);            
-        });
-        messageArea.setOnKeyPressed((KeyEvent keyEvent) -> {
-            KeyCombination submit = new KeyCodeCombination(KeyCode.ENTER, KeyCodeCombination.SHIFT_DOWN);
-            if (submit.match(keyEvent))  {
-               handleMessageSend();
-            }
-        });
     }
     
     private void handleMessageSend() {
         String text = messageArea.getText();
+        if(text.isEmpty()) return;
         if(SharedState.getInstance().isRequestPending()) {
             //Answering to a request
+            System.out.println("There is a pending request...");
             SharedState.getInstance().setResponse(text.equals("Y"));
+            System.out.println("Waiting for HP protocol to terminate...");
+            boolean protocolResult = SharedState.getInstance().waitProtocol();
+            if(protocolResult) (new Alert(AlertType.INFORMATION,"Connected")).showAndWait().filter(b -> b == ButtonType.OK);
+            else (new Alert(AlertType.ERROR,"Connection failed")).showAndWait().filter(b -> b == ButtonType.OK);
+            messageArea.clear();
             return;
         }
-        if(text.isEmpty()) return;
         Message m = new Message(myUsername,new Date(),text);
         myL.add(m);
         sendBuffer.add(m.getContent());
         messageArea.clear();         
-        sendButton.setDisable(true);
     }
     
     private void setOnSendButtonClickHandler() {
-        sendButton.setDisable(true);
-        sendButton.setOnAction(ev -> {
-            String text = messageArea.getText();
-            Message m = new Message(myUsername,new Date(),text);
-            myL.add(m);
-            sendBuffer.add(m.getContent());
-            messageArea.clear();            
-            sendButton.setDisable(true);
-        });
+        sendButton.setOnAction(ev -> {handleMessageSend();});
     }
 
     private void setOnConnectButtonClickHandler() {
@@ -201,11 +188,11 @@ public class SecureChat extends Application {
             byte[] testBytes = {0x8,0x6};
             CryptoManager.decryptRSA(CryptoManager.encryptRSA(testBytes, myPublicKey), myPrivKey); //Should raise an exception and terminate the program if wrong
             
-            Alert success = new Alert(AlertType.INFORMATION);
+            /*Alert success = new Alert(AlertType.INFORMATION);
             success.setTitle("SecureChat");
             success.setHeaderText("Application started successfully");
             success.setContentText("1)Private key loaded\n2)Authority certificate loaded\n3)Identity online");
-            success.showAndWait().filter(response -> response == ButtonType.OK);
+            success.showAndWait().filter(response -> response == ButtonType.OK);*/
             
             pk = myPrivKey;
             authorityCertificate = authCert;
