@@ -95,7 +95,10 @@ public class SecureChat extends Application {
     
     private void handleRequestAnswer(String answer) {
         System.out.println("There is a pending request...");
-        SharedState.getInstance().setResponse(answer.equals("Y"));
+        boolean response = (answer.equals("Y")||answer.equals("y"));
+        SharedState.getInstance().setResponse(response);
+        if(!response)
+            return;
         System.out.println("Waiting for HP protocol to terminate...");
         boolean protocolResult = SharedState.getInstance().waitProtocol();
         if(protocolResult) myL.add(new Message("...",new Date(),"You're connected",3));
