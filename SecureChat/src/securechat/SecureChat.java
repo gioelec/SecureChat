@@ -66,7 +66,7 @@ public class SecureChat extends Application {
             connectThread.join(10000);
             if(!connectThreadRunnable.getHandshakeResult()) {
                 connectThread.interrupt();
-                (new Alert(AlertType.ERROR,"Could not connect")).showAndWait().filter(res -> res == ButtonType.OK);
+                myL.add(new Message(username,new Date(),"Connection error",2));
                 return;
             }
             byte[] macKey = connectThreadRunnable.getAuthKey();
