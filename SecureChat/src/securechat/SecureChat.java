@@ -2,7 +2,6 @@ package securechat;
 
 import cryptoutils.cipherutils.CertificateManager;
 import cryptoutils.cipherutils.CryptoManager;
-import cryptoutils.communication.Request;
 import java.io.FileInputStream;
 import java.security.PrivateKey;
 import java.security.PublicKey;

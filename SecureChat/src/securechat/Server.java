@@ -114,7 +114,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
     private boolean getRequest(ObjectInputStream obj) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, CertificateException{
         this.req = Request.fromEncryptedRequest((byte []) obj.readObject(),myKey); //first we read the length we expect LBA||nb||S(sb,LBA||nb)
         this.symKey = req.getSecretKey();
-        return (req.verifySignature() && req.verifyCertificate(CACertificate)); //TODO verify name
+        return (req.verify(CACertificate, null)); //TODO verify name
     }
     
     private Request generateRequest() throws CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, SignatureException{
