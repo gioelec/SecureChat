@@ -6,7 +6,9 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
-
+//if cryptoutils CHANGED REBUILD WITH THE HAMMER
+//F9 TO COMPILE
+//MAIUSC+F6 TO LAUNCH
 public class ServerLauncher {
     public static void main(String[] args) {
         try {
