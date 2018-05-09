@@ -30,7 +30,6 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
     private String hostName;
     private Certificate otherCertificate;
     private String recipient;
-    private ArrayList<Certificate> crl;
 
     public Client(String hostName, int remotePort,int localPort, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate,String recipient,ArrayList<Certificate> crl){
         super(myKey,issuer, myCertificate, CACertificate,crl);
@@ -80,8 +79,10 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
     }
     
     private boolean getRequest(ObjectInputStream obj) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, CertificateException{
-        this.req = Request.fromEncryptedRequest((byte []) obj.readObject(),myKey); //first we read the length we expect LBA||nb||S(sb,LBA||nb)
+        this.req = Request.fromEncryptedRequest((byte[]) obj.readObject(),myKey); //first we read the length we expect LBA||nb||S(sb,LBA||nb)
         this.authKey = req.getSecretKey();
+        System.out.println((crl == null));
+        System.out.println((crl.contains(req.getCertificate())));
         return (req.verify(CACertificate, recipient)&& (crl==null || !crl.contains(req.getCertificate()))); 
     }
     private Request generateRequest() throws CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, SignatureException{

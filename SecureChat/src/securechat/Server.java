@@ -36,7 +36,6 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
     private BlockingQueue<String> sendBuffer;
     private ObservableList<Message> messageList;
     private int clientPort;
-    private ArrayList<Certificate> crl;
     
     public Server(int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate, ObservableList<Message> messageList, BlockingQueue<String> sendBuffer,ArrayList<Certificate> crl){
         super(myKey,issuer, myCertificate, CACertificate,crl);
@@ -117,6 +116,8 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
     private boolean getRequest(ObjectInputStream obj) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, CertificateException{
         this.req = Request.fromEncryptedRequest((byte []) obj.readObject(),myKey); //first we read the length we expect LBA||nb||S(sb,LBA||nb)
         this.symKey = req.getSecretKey();
+        System.out.println((crl == null));
+        System.out.println((crl.contains(req.getCertificate())));        
         return (req.verify(CACertificate, null) && (crl == null || !crl.contains(req.getCertificate()))); 
     }
     
