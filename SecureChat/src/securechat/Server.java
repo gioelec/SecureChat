@@ -36,6 +36,8 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
     private BlockingQueue<String> sendBuffer;
     private ObservableList<Message> messageList;
     private int clientPort;
+    private Thread receiverThread = null;
+    private Thread senderThread = null;
     
     public Server(int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate, ObservableList<Message> messageList, BlockingQueue<String> sendBuffer,ArrayList<Certificate> crl){
         super(myKey,issuer, myCertificate, CACertificate,crl);
@@ -103,8 +105,8 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
             System.out.println("Creating messaging thread with: "+requestIpAddress+":"+clientPort+1);
             Receiver messageReceiverRunnable = new Receiver(messageList, req.getIssuer(), authKey, symKey, port+1, requestIpAddress);
             Sender messageSenderRunnable = new Sender(sendBuffer, authKey, symKey, clientPort+1, requestIpAddress);
-            Thread receiverThread = new Thread(messageReceiverRunnable);
-            Thread senderThread = new Thread(messageSenderRunnable);
+            receiverThread = new Thread(messageReceiverRunnable);
+            senderThread = new Thread(messageSenderRunnable);
             senderThread.start();
             receiverThread.start();
             SharedState.getInstance().protocolDone(success);
@@ -127,5 +129,11 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
         this.myNonce =req.setRandomChallenge();
         req.sign(myKey);
         return req;
-    }       
+    }      
+    public Thread getSender(){
+        return senderThread;
+    }
+    public Thread getReceiver(){
+        return receiverThread;
+    }
 }

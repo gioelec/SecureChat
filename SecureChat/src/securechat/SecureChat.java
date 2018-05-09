@@ -11,6 +11,9 @@ import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.net.Socket;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.security.PrivateKey;
@@ -40,6 +43,7 @@ public class SecureChat extends Application {
     private final Label connectToLabel = new Label("NAME AND HOST TO CONNECT WITH");
     private final TextField connectToField = new TextField();
     private final Button connectButton = new Button("CONNECT");
+    private final Button disconnectButton = new Button("DISCONNECT");
     private final ObservableList<Message> myL = FXCollections.observableArrayList();
     private final ListView<Message> l = new ListView<>(myL);
     private static BlockingQueue<String> sendBuffer = new LinkedBlockingQueue<>();
@@ -53,7 +57,10 @@ public class SecureChat extends Application {
     private String myUsername;
     private Certificate authorityCertificate;
     private int listeningPort;
-    
+    private Thread receiverThread;
+    private Thread senderThread;
+    private Server protocolServerRunnable;
+    private String port;
     private HBox buildConnectControls() {
         HBox connectControls = new HBox(5);
         connectControls.getChildren().addAll(connectToField,connectButton);
@@ -72,7 +79,7 @@ public class SecureChat extends Application {
         String hostNameElements[] = hostNamePort.split(":");
         if(hostNameElements.length < 2) return;
         String hostName = hostNameElements[0];
-        String port = hostNameElements[1];
+        port = hostNameElements[1];
         System.out.println("Starting handshake protocol with: "+hostName+":"+port);
         Client connectThreadRunnable = new Client(hostName, Integer.parseInt(port),listeningPort, pk, myUsername, myCertificate, authorityCertificate,username,certificateRevocationList);
         Thread connectThread = new Thread(connectThreadRunnable);
@@ -88,8 +95,8 @@ public class SecureChat extends Application {
             byte[] symKey = connectThreadRunnable.getSymKey();
             Receiver messageReceiverRunnable = new Receiver(myL, username, macKey, symKey, listeningPort+1, hostName);
             Sender messageSenderRunnable = new Sender(sendBuffer, macKey, symKey, Integer.parseInt(port)+1, hostName);
-            Thread receiverThread = new Thread(messageReceiverRunnable);
-            Thread senderThread = new Thread(messageSenderRunnable);
+            receiverThread = new Thread(messageReceiverRunnable);
+            senderThread = new Thread(messageSenderRunnable);
             myL.add(new Message(username,new Date(),"You're connected",3));
             receiverThread.start();
             senderThread.start();
@@ -138,7 +145,10 @@ public class SecureChat extends Application {
     private void setOnSendButtonClickHandler() {
         sendButton.setOnAction(ev -> {handleMessageSend();});
     }
-
+    private void setOnDisconnectButtonClickHandler() {
+        disconnectButton.setOnAction(ev -> {handleDisconnect();});
+    }
+    
     private void setOnConnectButtonClickHandler() {
         connectButton.setDisable(true);
     }    
@@ -156,12 +166,14 @@ public class SecureChat extends Application {
         root.add(l,0,2,2,1);
         root.add(messageArea,0,3,2,1);
         root.add(sendButton,0,4,2,1);
+        root.add(disconnectButton,0,4,2,1);
         GridPane.setHalignment(connectToLabel, HPos.CENTER);
         GridPane.setHalignment(connectControls,HPos.CENTER);
         GridPane.setHalignment(messageArea, HPos.CENTER);
         sendButton.setMaxWidth(Double.MAX_VALUE);
         GridPane.setHalignment(sendButton, HPos.CENTER);   
         GridPane.setFillWidth(sendButton, Boolean.TRUE);
+        GridPane.setFillWidth(disconnectButton, Boolean.TRUE);
         return root;
     }
     
@@ -210,6 +222,7 @@ public class SecureChat extends Application {
         configureTextFields();
         setOnConnectButtonClickHandler();
         setOnSendButtonClickHandler();
+        setOnDisconnectButtonClickHandler();
         HBox connectControls = buildConnectControls();
         configureListView();
         GridPane root = buildSceneGrid(connectControls);
@@ -226,7 +239,7 @@ public class SecureChat extends Application {
         loadCRL();
         System.out.println("Certificates in CRL:"+certificateRevocationList.size());
         System.out.println("Protocol listener started...");
-        Server protocolServerRunnable = new Server(listeningPort,pk,myUsername,myCertificate,authorityCertificate,myL,sendBuffer,certificateRevocationList);
+        protocolServerRunnable = new Server(listeningPort,pk,myUsername,myCertificate,authorityCertificate,myL,sendBuffer,certificateRevocationList);
         Thread protocolServerThread = new Thread(protocolServerRunnable);
         protocolServerThread.start();
     }
@@ -263,6 +276,17 @@ public class SecureChat extends Application {
 
     public static void main(String[] args) {
         launch(args);
+    }
+
+    private void handleDisconnect() {
+        disconnectButton.disableProperty();
+        Thread receiverThread,senderThread;
+        receiverThread=(this.receiverThread==null)?protocolServerRunnable.getReceiver():this.receiverThread;
+        senderThread=(this.senderThread==null)?protocolServerRunnable.getSender():this.senderThread;
+        receiverThread.interrupt();
+        senderThread.interrupt();
+        sendBuffer.add(new String("Interrupt")); //just to move the sender from the blocking get  
+        myL.add(new Message(myUsername,new Date(),"Connection closed",2));
     }
     
 }

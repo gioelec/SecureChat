@@ -22,6 +22,11 @@ public class Sender extends MessagingThread implements Runnable {
                 while (true) { 
                     System.out.println("WAITING TO GET MSG FROM QUEUE--sender"); 
                     msg = queue.take();
+                    if(Thread.currentThread().isInterrupted()){
+                        System.out.println("I have been interrupted");
+                        //An idea here could be to do a secure send toverse the receiver on the same process, need to have receiver port here
+                        return;
+                    }
                     System.out.println("MESSAGE TAKEN--sender");
                     SecureEndpoint.secureSend(msg.getBytes(), oout, symKey, authKey);
                     System.out.println("MESSAGE SENT---sender");

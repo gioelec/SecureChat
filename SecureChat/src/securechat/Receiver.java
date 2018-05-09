@@ -1,6 +1,7 @@
 package securechat;
 
 import cryptoutils.communication.SecureEndpoint;
+import cryptoutils.messagebuilder.MessageBuilder;
 import java.io.*;
 import java.net.*;
 import java.util.Date;
@@ -43,7 +44,7 @@ public class Receiver extends MessagingThread implements Runnable {
                     System.err.println("E ZITTO!");
                 }
                 System.out.println("MSG ADDED TO THE LIST -- receiver");
-            }   
+            }
         }catch (Exception ex) {
             System.out.println("RECEIVER EXCEPTION -- " + ex.getMessage());
         }    
