@@ -87,7 +87,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 Object[] receivedChallenge = receiveChallenge(oin);
                 if(!(boolean)receivedChallenge[0]){
                     System.err.println("Challenge not fulfilled by the other user");
-                    continue;
+                    throw new Exception("Challenge not fulfilled by the other user");
                 }
                 clientPort = (int)receivedChallenge[1];
                 sendChallenge(oout,req.getChallengeNonce(),-1);
