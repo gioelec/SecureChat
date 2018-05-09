@@ -5,9 +5,11 @@ import cryptoutils.cipherutils.CryptoManager;
 import cryptoutils.cipherutils.SignatureManager;
 import cryptoutils.communication.SecureEndpoint;
 import cryptoutils.communication.TrustedPartyInterface;
+import cryptoutils.hashutils.HashManager;
 import cryptoutils.messagebuilder.MessageBuilder;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -20,6 +22,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Properties;
 import java.util.concurrent.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.collections.*;
 import javafx.geometry.*;
@@ -173,6 +177,7 @@ public class SecureChat extends Application {
             TrustedPartyInterface stub = (TrustedPartyInterface) registry.lookup("TrustedPartyInterface");
             //WE ASSUME  SIGN LENGTHN SIGN NONCE CERT LENGTH CERT
             byte[] nonce = new byte[4];
+            
             (new SecureRandom()).nextBytes(nonce);
             byte[] crl = stub.getCRL(nonce);
             if(crl == null) return;
@@ -184,16 +189,16 @@ public class SecureChat extends Application {
                 System.out.println("UNABLE TO VERIFY CRL SIGNATURE"); System.exit(-1);
             }
             int size; int ptr=0;
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            byte encodedCrl[] = MessageBuilder.extractLastBytes(nonceEncodedCrl, nonceEncodedCrl.length-4);
+            byte[] encodedCrl = MessageBuilder.extractLastBytes(nonceEncodedCrl, nonceEncodedCrl.length-4);
             for(;ptr < encodedCrl.length;) {
                 size = MessageBuilder.toInt(MessageBuilder.extractRangeBytes(encodedCrl, ptr, ptr+4));
                 ptr+=4;
-                byte[] certData = MessageBuilder.extractRangeBytes(crl, ptr, ptr+size);
+                byte[] certData = MessageBuilder.extractRangeBytes(encodedCrl, ptr, ptr+size);
                 ptr+=size;
+                CertificateFactory certFactory =  CertificateFactory.getInstance("X.509");
                 InputStream is = new ByteArrayInputStream(certData);
-                Certificate cert = cf.generateCertificate(is);
-                certificateRevocationList.add(cert);
+                Certificate certificate = certFactory.generateCertificate(is);
+                certificateRevocationList.add(certificate);
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -216,9 +221,10 @@ public class SecureChat extends Application {
         root.requestFocus();
         l.scrollTo(myL.size()-1);
         appStage = primaryStage;
-        scene.getStylesheets().add("file:./style.css");        
+        scene.getStylesheets().add("file:./style.css");
         loadCryptoSpecs();
         loadCRL();
+        System.out.println("Certificates in CRL:"+certificateRevocationList.size());
         System.out.println("Protocol listener started...");
         Server protocolServerRunnable = new Server(listeningPort,pk,myUsername,myCertificate,authorityCertificate,myL,sendBuffer,certificateRevocationList);
         Thread protocolServerThread = new Thread(protocolServerRunnable);
@@ -238,11 +244,6 @@ public class SecureChat extends Application {
             byte[] testBytes = {0x8,0x6};
             CryptoManager.decryptRSA(CryptoManager.encryptRSA(testBytes, myPublicKey), myPrivKey); //Should raise an exception and terminate the program if wrong
             
-            /*Alert success = new Alert(AlertType.INFORMATION);
-            success.setTitle("SecureChat");
-            success.setHeaderText("Application started successfully");
-            success.setContentText("1)Private key loaded\n2)Authority certificate loaded\n3)Identity online");
-            success.showAndWait().filter(response -> response == ButtonType.OK);*/
             
             pk = myPrivKey;
             authorityCertificate = authCert;
