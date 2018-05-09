@@ -2,8 +2,12 @@ package securechat;
 
 import cryptoutils.cipherutils.CertificateManager;
 import cryptoutils.cipherutils.CryptoManager;
+import cryptoutils.cipherutils.SignatureManager;
 import cryptoutils.communication.TrustedPartyInterface;
+import cryptoutils.messagebuilder.MessageBuilder;
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.security.PrivateKey;
@@ -36,7 +40,7 @@ public class SecureChat extends Application {
     private final Button sendButton = new Button("SEND");
     private final Properties properties = new Properties();
     private Stage appStage;
-    private ArrayList<Certificate> certList;
+    private ArrayList<Certificate> certificateRevocationList = new ArrayList<>();
     private PrivateKey pk;
     private Certificate myCertificate;
     private String myUsername;
@@ -63,7 +67,7 @@ public class SecureChat extends Application {
         String hostName = hostNameElements[0];
         String port = hostNameElements[1];
         System.out.println("Starting handshake protocol with: "+hostName+":"+port);
-        Client connectThreadRunnable = new Client(hostName, Integer.parseInt(port),listeningPort, pk, myUsername, myCertificate, authorityCertificate,username,certList);
+        Client connectThreadRunnable = new Client(hostName, Integer.parseInt(port),listeningPort, pk, myUsername, myCertificate, authorityCertificate,username,certificateRevocationList);
         Thread connectThread = new Thread(connectThreadRunnable);
         connectThread.start();
         try {
@@ -165,6 +169,23 @@ public class SecureChat extends Application {
             Registry registry = LocateRegistry.getRegistry("localhost",9999);
             TrustedPartyInterface stub = (TrustedPartyInterface) registry.lookup("TrustedPartyInterface");
             byte[] crl = stub.getCRL();
+            if(crl == null || crl.length < 256/8) return;
+            byte[] signature = MessageBuilder.extractLastBytes(crl, 256/8);
+            byte[] encodedCrl = MessageBuilder.extractFirstBytes(crl, crl.length-256/8);
+            if(!SignatureManager.verify(encodedCrl, signature, "SHA256withRSA", authorityCertificate)) {
+                System.out.println("UNABLE TO VERIFY CRL SIGNATURE"); System.exit(-1);
+            }
+            int size; int ptr=0;
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            for(;ptr < encodedCrl.length;) {
+                size = MessageBuilder.toInt(MessageBuilder.extractRangeBytes(encodedCrl, ptr, ptr+4));
+                ptr+=4;
+                byte[] certData = MessageBuilder.extractRangeBytes(crl, ptr, ptr+size);
+                ptr+=size;
+                InputStream is = new ByteArrayInputStream(certData);
+                Certificate cert = cf.generateCertificate(is);
+                certificateRevocationList.add(cert);
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -190,7 +211,7 @@ public class SecureChat extends Application {
         loadCryptoSpecs();
         loadCRL();
         System.out.println("Protocol listener started...");
-        Server protocolServerRunnable = new Server(listeningPort,pk,myUsername,myCertificate,authorityCertificate,myL,sendBuffer,certList);
+        Server protocolServerRunnable = new Server(listeningPort,pk,myUsername,myCertificate,authorityCertificate,myL,sendBuffer,certificateRevocationList);
         Thread protocolServerThread = new Thread(protocolServerRunnable);
         protocolServerThread.start();
     }

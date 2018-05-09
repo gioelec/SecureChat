@@ -97,6 +97,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
             }catch(Exception e){
                 SharedState.getInstance().protocolDone(false);
                 e.printStackTrace();
+                continue;
             }
             if(!success) continue;
             System.out.println("PROTOCOL ENDED CORRECTLY WITH: "+requestIpAddress+":"+clientPort);
