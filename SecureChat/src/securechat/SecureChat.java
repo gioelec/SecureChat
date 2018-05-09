@@ -171,15 +171,15 @@ public class SecureChat extends Application {
         try{
             Registry registry = LocateRegistry.getRegistry("localhost",9999);
             TrustedPartyInterface stub = (TrustedPartyInterface) registry.lookup("TrustedPartyInterface");
-            //WE ASSUME NONCE SIGN LENGTHN SIGN CERT LENGTH CERT
+            //WE ASSUME  SIGN LENGTHN SIGN NONCE CERT LENGTH CERT
             byte[] nonce = new byte[4];
             (new SecureRandom()).nextBytes(nonce);
             byte[] crl = stub.getCRL(nonce);
             if(crl == null) return;
-            byte[] recvNonce = MessageBuilder.extractFirstBytes(crl, 4);
-            int signatureLength = MessageBuilder.toInt(MessageBuilder.extractRangeBytes(crl, 4, 8));            
-            byte[] signature = MessageBuilder.extractRangeBytes(crl, 9,9+signatureLength);
-            byte[] nonceEncodedCrl = MessageBuilder.extractFirstBytes(crl, crl.length-256/8);
+            int signatureLength = MessageBuilder.toInt(MessageBuilder.extractFirstBytes(crl, 4)); 
+            byte[] signature = MessageBuilder.extractRangeBytes(crl, 4,4+signatureLength);
+            byte[] recvNonce = MessageBuilder.extractRangeBytes(crl, 4+signatureLength,4+4+signatureLength); 
+            byte[] nonceEncodedCrl = MessageBuilder.extractLastBytes(crl,crl.length-(4+signatureLength));
             if(!(Arrays.equals(nonce, recvNonce))||!SignatureManager.verify(nonceEncodedCrl, signature, "SHA256withRSA", authorityCertificate)) {
                 System.out.println("UNABLE TO VERIFY CRL SIGNATURE"); System.exit(-1);
             }
