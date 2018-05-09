@@ -2,10 +2,14 @@ package securechat;
 
 import cryptoutils.cipherutils.CertificateManager;
 import cryptoutils.cipherutils.CryptoManager;
+import cryptoutils.communication.TrustedPartyInterface;
 import java.io.FileInputStream;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.*;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Properties;
 import java.util.concurrent.*;
@@ -32,6 +36,7 @@ public class SecureChat extends Application {
     private final Button sendButton = new Button("SEND");
     private final Properties properties = new Properties();
     private Stage appStage;
+    private ArrayList<Certificate> certList;
     private PrivateKey pk;
     private Certificate myCertificate;
     private String myUsername;
@@ -58,7 +63,7 @@ public class SecureChat extends Application {
         String hostName = hostNameElements[0];
         String port = hostNameElements[1];
         System.out.println("Starting handshake protocol with: "+hostName+":"+port);
-        Client connectThreadRunnable = new Client(hostName, Integer.parseInt(port),listeningPort, pk, myUsername, myCertificate, authorityCertificate,username);
+        Client connectThreadRunnable = new Client(hostName, Integer.parseInt(port),listeningPort, pk, myUsername, myCertificate, authorityCertificate,username,certList);
         Thread connectThread = new Thread(connectThreadRunnable);
         connectThread.start();
         try {
@@ -155,6 +160,15 @@ public class SecureChat extends Application {
             return cell;
         });
     }
+    private void loadCRL(){ //TODO decode
+        try{
+            Registry registry = LocateRegistry.getRegistry("localhost",9999);
+            TrustedPartyInterface stub = (TrustedPartyInterface) registry.lookup("TrustedPartyInterface");
+            byte[] crl = stub.getCRL();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
     
     @Override
     public void start(Stage primaryStage) {
@@ -174,8 +188,9 @@ public class SecureChat extends Application {
         appStage = primaryStage;
         scene.getStylesheets().add("file:./style.css");        
         loadCryptoSpecs();
+        loadCRL();
         System.out.println("Protocol listener started...");
-        Server protocolServerRunnable = new Server(listeningPort,pk,myUsername,myCertificate,authorityCertificate,myL,sendBuffer);
+        Server protocolServerRunnable = new Server(listeningPort,pk,myUsername,myCertificate,authorityCertificate,myL,sendBuffer,certList);
         Thread protocolServerThread = new Thread(protocolServerRunnable);
         protocolServerThread.start();
     }

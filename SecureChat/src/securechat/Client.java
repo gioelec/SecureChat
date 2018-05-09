@@ -19,6 +19,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import cryptoutils.cipherutils.CryptoManager;
+import java.util.ArrayList;
 
 
 public class Client extends HandshakeProtocol implements Runnable{ //Represents Alice in the protocol specifics
@@ -29,9 +30,10 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
     private String hostName;
     private Certificate otherCertificate;
     private String recipient;
+    private ArrayList<Certificate> crl;
 
-    public Client(String hostName, int remotePort,int localPort, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate,String recipient){
-        super(myKey,issuer, myCertificate, CACertificate);
+    public Client(String hostName, int remotePort,int localPort, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate,String recipient,ArrayList<Certificate> crl){
+        super(myKey,issuer, myCertificate, CACertificate,crl);
         this.remotePort = remotePort;
         this.hostName = hostName;
         this.recipient=recipient;
@@ -80,7 +82,7 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
     private boolean getRequest(ObjectInputStream obj) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, CertificateException{
         this.req = Request.fromEncryptedRequest((byte []) obj.readObject(),myKey); //first we read the length we expect LBA||nb||S(sb,LBA||nb)
         this.authKey = req.getSecretKey();
-        return (req.verify(CACertificate, recipient)); //TODO verify name
+        return (req.verify(CACertificate, recipient)&& (crl==null || !crl.contains(req.getCertificate()))); 
     }
     private Request generateRequest() throws CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, SignatureException{
         this.symKey = CryptoManager.generateAES256RandomSecretKey();

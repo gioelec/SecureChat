@@ -8,6 +8,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
+import java.util.ArrayList;
 
 public class HandshakeProtocol {
     protected PrivateKey myKey;
@@ -18,11 +19,14 @@ public class HandshakeProtocol {
     protected Certificate CACertificate;
     protected int myNonce;
     protected boolean success = false;
-    public HandshakeProtocol(PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate){
+    protected ArrayList<Certificate> crl;
+
+    public HandshakeProtocol(PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate,ArrayList<Certificate> crl){
         this.myKey = myKey;
         this.issuer = issuer;
         this.myCertificate = myCertificate;
         this.CACertificate = CACertificate;
+        this.crl = crl;
     }
     protected Object[] receiveChallenge(ObjectInputStream oin){
         byte [] decryptedMsg =  SecureEndpoint.secureReceive(oin, symKey, authKey);  //data,kab,mab

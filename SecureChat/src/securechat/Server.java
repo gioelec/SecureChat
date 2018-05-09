@@ -22,6 +22,7 @@ import javax.crypto.NoSuchPaddingException;
 import cryptoutils.cipherutils.CryptoManager;
 import java.net.InetAddress;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.BlockingQueue;
 import javafx.collections.ObservableList;
@@ -35,9 +36,10 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
     private BlockingQueue<String> sendBuffer;
     private ObservableList<Message> messageList;
     private int clientPort;
+    private ArrayList<Certificate> crl;
     
-    public Server(int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate, ObservableList<Message> messageList, BlockingQueue<String> sendBuffer){
-        super(myKey,issuer, myCertificate, CACertificate);
+    public Server(int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate, ObservableList<Message> messageList, BlockingQueue<String> sendBuffer,ArrayList<Certificate> crl){
+        super(myKey,issuer, myCertificate, CACertificate,crl);
         this.port = port;
         System.out.println(messageList==null);
         this.messageList = messageList;
@@ -114,7 +116,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
     private boolean getRequest(ObjectInputStream obj) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, CertificateException{
         this.req = Request.fromEncryptedRequest((byte []) obj.readObject(),myKey); //first we read the length we expect LBA||nb||S(sb,LBA||nb)
         this.symKey = req.getSecretKey();
-        return (req.verify(CACertificate, null)); //TODO verify name
+        return (req.verify(CACertificate, null) && (crl == null || !crl.contains(req.getCertificate()))); 
     }
     
     private Request generateRequest() throws CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, SignatureException{
