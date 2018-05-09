@@ -3,6 +3,7 @@ package securechat;
 import cryptoutils.cipherutils.CertificateManager;
 import cryptoutils.cipherutils.CryptoManager;
 import cryptoutils.cipherutils.SignatureManager;
+import cryptoutils.communication.SecureEndpoint;
 import cryptoutils.communication.TrustedPartyInterface;
 import cryptoutils.messagebuilder.MessageBuilder;
 import java.io.ByteArrayInputStream;
@@ -12,8 +13,10 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.cert.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Properties;
 import java.util.concurrent.*;
@@ -168,15 +171,21 @@ public class SecureChat extends Application {
         try{
             Registry registry = LocateRegistry.getRegistry("localhost",9999);
             TrustedPartyInterface stub = (TrustedPartyInterface) registry.lookup("TrustedPartyInterface");
-            byte[] crl = stub.getCRL();
-            if(crl == null || crl.length < 256/8) return;
-            byte[] signature = MessageBuilder.extractLastBytes(crl, 256/8);
-            byte[] encodedCrl = MessageBuilder.extractFirstBytes(crl, crl.length-256/8);
-            if(!SignatureManager.verify(encodedCrl, signature, "SHA256withRSA", authorityCertificate)) {
+            //WE ASSUME NONCE SIGN LENGTHN SIGN CERT LENGTH CERT
+            byte[] nonce = new byte[4];
+            (new SecureRandom()).nextBytes(nonce);
+            byte[] crl = stub.getCRL(nonce);
+            if(crl == null) return;
+            byte[] recvNonce = MessageBuilder.extractFirstBytes(crl, 4);
+            int signatureLength = MessageBuilder.toInt(MessageBuilder.extractRangeBytes(crl, 4, 8));            
+            byte[] signature = MessageBuilder.extractRangeBytes(crl, 9,9+signatureLength);
+            byte[] nonceEncodedCrl = MessageBuilder.extractFirstBytes(crl, crl.length-256/8);
+            if(!(Arrays.equals(nonce, recvNonce))||!SignatureManager.verify(nonceEncodedCrl, signature, "SHA256withRSA", authorityCertificate)) {
                 System.out.println("UNABLE TO VERIFY CRL SIGNATURE"); System.exit(-1);
             }
             int size; int ptr=0;
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            byte encodedCrl[] = MessageBuilder.extractLastBytes(nonceEncodedCrl, nonceEncodedCrl.length-4);
             for(;ptr < encodedCrl.length;) {
                 size = MessageBuilder.toInt(MessageBuilder.extractRangeBytes(encodedCrl, ptr, ptr+4));
                 ptr+=4;
