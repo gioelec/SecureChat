@@ -215,8 +215,13 @@ public class SecureChat extends Application {
         }
     }
     
+    private static void dummy(Thread t, Throwable e) {
+        System.out.println("...");
+    }
+    
     @Override
     public void start(Stage primaryStage) {
+        Thread.setDefaultUncaughtExceptionHandler(SecureChat::dummy);
         configureTextFields();
         setOnConnectButtonClickHandler();
         setOnSendButtonClickHandler();
