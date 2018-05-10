@@ -37,7 +37,7 @@ public class HandshakeProtocol {
             System.out.println("RECEIVED:"+receivedNonce);
             System.out.println("EXPECTED:"+myNonce);
             if(decryptedMsg.length>4){
-               returns[1] = MessageBuilder.toInt(MessageBuilder.extractLastBytes(decryptedMsg, 8));
+               returns[1] = MessageBuilder.toInt(MessageBuilder.extractLastBytes(decryptedMsg, 4));
                System.out.println("CLIENT PORT "+returns[1]);
             }
             returns[0] = (myNonce == receivedNonce);     

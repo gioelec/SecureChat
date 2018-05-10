@@ -45,12 +45,12 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
         System.out.println(messageList==null);
         this.messageList = messageList;
         this.sendBuffer = sendBuffer;
-        System.out.println("SERVER ISTANTIATED @ PORT: "+port);///////////////////////////
     }
 
     @Override
     public void run(){
         while(true){
+            System.out.println("SERVER ISTANTIATED @ PORT: "+port);
             String requestIpAddress = null;
             int requestPort = -1;
             Object[] confReturn = null;
@@ -110,8 +110,13 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
             senderThread.start();
             receiverThread.start();
             SharedState.getInstance().protocolDone(success);
+            System.out.println("Before join---Server");
             try {
-                senderThread.join(); receiverThread.join();
+                
+                senderThread.join();
+                System.out.println("Sender join done---Server");
+                receiverThread.join();
+                System.out.println("Receiver join done---Server");
             } catch(Exception e) {}
         }
     }

@@ -39,6 +39,7 @@ public class Sender extends MessagingThread implements Runnable {
                     System.out.println("MESSAGE SENT---sender");
                 }
             } catch (Exception ex) {
+                System.out.println("RECEIVER STOPPED---server");
                 System.out.println("SENDER EXCEPTION -- "+ex.getMessage());
             }        
     }

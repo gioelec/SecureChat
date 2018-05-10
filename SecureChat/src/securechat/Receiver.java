@@ -43,7 +43,7 @@ public class Receiver extends MessagingThread implements Runnable {
                 System.out.println("WAITING TO RECEIVE -- receiver");
                 rcv = SecureEndpoint.secureReceive(oin, symKey, authKey);
                 if(rcv==null){
-                    System.err.println("Other user left you");
+                    System.err.println("OTHER USER LEFT YOU--receiver");
                     messageList.add(new Message(sender,new Date(),"Connection closed",2));
                     return;
                 }
@@ -57,6 +57,7 @@ public class Receiver extends MessagingThread implements Runnable {
                 System.out.println("MSG ADDED TO THE LIST -- receiver");
             }
         }catch (Exception ex) {
+            System.out.println("RECEIVER STOPPED---receiver");
             System.out.println("RECEIVER EXCEPTION -- " + ex.getMessage());
         }    
     }
