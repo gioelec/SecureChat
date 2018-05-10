@@ -36,8 +36,8 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
     private BlockingQueue<String> sendBuffer;
     private ObservableList<Message> messageList;
     private int clientPort;
-    private Thread receiverThread = null;
-    private Thread senderThread = null;
+    private Receiver receiverRunnable = null;
+    private Sender senderRunnable = null;
     
     public Server(int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate, ObservableList<Message> messageList, BlockingQueue<String> sendBuffer,ArrayList<Certificate> crl){
         super(myKey,issuer, myCertificate, CACertificate,crl);
@@ -103,10 +103,10 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
             if(!success) continue;
             System.out.println("PROTOCOL ENDED CORRECTLY WITH: "+requestIpAddress+":"+clientPort);
             System.out.println("Creating messaging thread with: "+requestIpAddress+":"+clientPort+1);
-            Receiver messageReceiverRunnable = new Receiver(messageList, req.getIssuer(), authKey, symKey, port+1, requestIpAddress);
-            Sender messageSenderRunnable = new Sender(sendBuffer, authKey, symKey, clientPort+1, requestIpAddress);
-            receiverThread = new Thread(messageReceiverRunnable);
-            senderThread = new Thread(messageSenderRunnable);
+            receiverRunnable = new Receiver(messageList, req.getIssuer(), authKey, symKey, port+1, requestIpAddress);
+            senderRunnable = new Sender(sendBuffer, authKey, symKey, clientPort+1, requestIpAddress);
+            Thread receiverThread = new Thread(receiverRunnable);
+            Thread senderThread = new Thread(senderRunnable);
             senderThread.start();
             receiverThread.start();
             SharedState.getInstance().protocolDone(success);
@@ -130,10 +130,10 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
         req.sign(myKey);
         return req;
     }      
-    public Thread getSender(){
-        return senderThread;
+    public Sender getSender(){
+        return senderRunnable;
     }
-    public Thread getReceiver(){
-        return receiverThread;
+    public Receiver getReceiver(){
+        return receiverRunnable;
     }
 }

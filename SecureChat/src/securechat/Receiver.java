@@ -11,11 +11,21 @@ import securechat.model.Message;
 public class Receiver extends MessagingThread implements Runnable {
     private ObservableList<Message> messageList;
     private String sender;
+    private ServerSocket ssRef;
+    private Socket sRef;
     public Receiver(ObservableList<Message> messageList,String sender,byte[] authKey, byte[] symKey, int port, String hostName) {
         super(authKey, symKey, port, hostName);
         this.messageList = messageList;
         this.sender = sender;
     }
+    
+    public void stopReceiver() {
+        try {
+            sRef.close();
+            ssRef.close();
+        } catch(Exception e) {}
+    }
+    
     @Override
     public void run(){
         System.out.println("Receiver.run()");
@@ -25,6 +35,7 @@ public class Receiver extends MessagingThread implements Runnable {
             InputStream in = s.getInputStream();
             ObjectInputStream oin = new ObjectInputStream(in);
         ){
+            ssRef = ss; sRef = s;
             System.out.println("TRY DONE -- receiver");
             String msg = null;
             byte[] rcv = null;

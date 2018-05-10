@@ -57,8 +57,8 @@ public class SecureChat extends Application {
     private String myUsername;
     private Certificate authorityCertificate;
     private int listeningPort;
-    private Thread receiverThread;
-    private Thread senderThread;
+    private Receiver receiverRunnable;
+    private Sender senderRunnable;
     private Server protocolServerRunnable;
     private String port;
     private HBox buildConnectControls() {
@@ -93,10 +93,10 @@ public class SecureChat extends Application {
             }
             byte[] macKey = connectThreadRunnable.getAuthKey();
             byte[] symKey = connectThreadRunnable.getSymKey();
-            Receiver messageReceiverRunnable = new Receiver(myL, username, macKey, symKey, listeningPort+1, hostName);
-            Sender messageSenderRunnable = new Sender(sendBuffer, macKey, symKey, Integer.parseInt(port)+1, hostName);
-            receiverThread = new Thread(messageReceiverRunnable);
-            senderThread = new Thread(messageSenderRunnable);
+            receiverRunnable = new Receiver(myL, username, macKey, symKey, listeningPort+1, hostName);
+            senderRunnable = new Sender(sendBuffer, macKey, symKey, Integer.parseInt(port)+1, hostName);
+            Thread receiverThread = new Thread(receiverRunnable);
+            Thread senderThread = new Thread(senderRunnable);
             myL.add(new Message(username,new Date(),"You're connected",3));
             receiverThread.start();
             senderThread.start();
@@ -183,13 +183,11 @@ public class SecureChat extends Application {
             return cell;
         });
     }
-    private void loadCRL(){ //TODO decode
+    private void loadCRL(){
         try{
             Registry registry = LocateRegistry.getRegistry("localhost",9999);
             TrustedPartyInterface stub = (TrustedPartyInterface) registry.lookup("TrustedPartyInterface");
-            //WE ASSUME  SIGN LENGTHN SIGN NONCE CERT LENGTH CERT
-            byte[] nonce = new byte[4];
-            
+            byte[] nonce = new byte[4];            
             (new SecureRandom()).nextBytes(nonce);
             byte[] crl = stub.getCRL(nonce);
             if(crl == null) return;
@@ -213,7 +211,7 @@ public class SecureChat extends Application {
                 certificateRevocationList.add(certificate);
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            System.out.println("TTP NOT ONLINE");
         }
     }
     
@@ -255,9 +253,7 @@ public class SecureChat extends Application {
             PrivateKey myPrivKey = CryptoManager.readRSAPrivateKeyFromPEMFile(properties.getProperty("privatekeypath"));
             PublicKey myPublicKey = myCertificate.getPublicKey(); 
             byte[] testBytes = {0x8,0x6};
-            CryptoManager.decryptRSA(CryptoManager.encryptRSA(testBytes, myPublicKey), myPrivKey); //Should raise an exception and terminate the program if wrong
-            
-            
+            CryptoManager.decryptRSA(CryptoManager.encryptRSA(testBytes, myPublicKey), myPrivKey); 
             pk = myPrivKey;
             authorityCertificate = authCert;
             myUsername = properties.getProperty("myname");
@@ -280,12 +276,12 @@ public class SecureChat extends Application {
 
     private void handleDisconnect() {
         disconnectButton.disableProperty();
-        Thread receiverThread,senderThread;
-        receiverThread=(this.receiverThread==null)?protocolServerRunnable.getReceiver():this.receiverThread;
-        senderThread=(this.senderThread==null)?protocolServerRunnable.getSender():this.senderThread;
-        receiverThread.interrupt();
-        senderThread.interrupt();
-        sendBuffer.add(new String("Interrupt")); //just to move the sender from the blocking get  
+        Receiver rt;
+        Sender st;
+        rt=(this.receiverRunnable==null)?protocolServerRunnable.getReceiver():receiverRunnable;
+        st=(this.senderRunnable==null)?protocolServerRunnable.getSender():senderRunnable;
+        st.stopSender();
+        rt.stopReceiver();
         myL.add(new Message(myUsername,new Date(),"Connection closed",2));
     }
     
