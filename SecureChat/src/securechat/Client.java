@@ -61,7 +61,7 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
                     return;
                 }
                 System.out.println("Got reply -- Sending port "+localPort);                
-                sendChallenge(oout,req.getChallengeNonce(),localPort);
+                sendChallenge(oout,req.getTimestamp().toEpochMilli(),localPort);
                 if(!(boolean)receiveChallenge(oin)[0]){
                     System.err.println("Challenge not fulfilled by the other user");
                     return;
@@ -88,7 +88,7 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
     private Request generateRequest() throws CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, SignatureException{
         this.symKey = CryptoManager.generateAES256RandomSecretKey();
         Request req = new Request(issuer,recipient,myCertificate,symKey); 
-        this.myNonce =req.setRandomChallenge();
+        this.myNonce =req.getTimestamp().toEpochMilli();
         req.sign(myKey);
         return req;
     }       

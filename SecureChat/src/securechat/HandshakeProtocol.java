@@ -17,7 +17,7 @@ public class HandshakeProtocol {
     protected String issuer;
     protected Certificate myCertificate;
     protected Certificate CACertificate;
-    protected int myNonce;
+    protected long myNonce;
     protected boolean success = false;
     protected ArrayList<Certificate> crl;
 
@@ -33,11 +33,11 @@ public class HandshakeProtocol {
         Object[] returns = new Object[2];   //0 nonce verified or not, 1 port needed for the server
         if(decryptedMsg!=null){
             System.out.println("NONCE RECEIVED");
-            int receivedNonce =MessageBuilder.toInt(MessageBuilder.extractFirstBytes(decryptedMsg, 4));
+            long receivedNonce =MessageBuilder.toLong(MessageBuilder.extractFirstBytes(decryptedMsg, 8));
             System.out.println("RECEIVED:"+receivedNonce);
             System.out.println("EXPECTED:"+myNonce);
             if(decryptedMsg.length>4){
-               returns[1] = MessageBuilder.toInt(MessageBuilder.extractLastBytes(decryptedMsg, 4));
+               returns[1] = MessageBuilder.toInt(MessageBuilder.extractLastBytes(decryptedMsg, 8));
                System.out.println("CLIENT PORT "+returns[1]);
             }
             returns[0] = (myNonce == receivedNonce);     
@@ -45,7 +45,7 @@ public class HandshakeProtocol {
             returns[0] = false;
         return returns;
     }
-    protected boolean sendChallenge(ObjectOutputStream oout,int receivedNonce,int port) throws NoSuchAlgorithmException, InvalidKeyException{
+    protected boolean sendChallenge(ObjectOutputStream oout,long receivedNonce,int port) throws NoSuchAlgorithmException, InvalidKeyException{
         System.out.println("PORT TO SEND: "+port);
         byte[] myNonce = MessageBuilder.toByteArray(receivedNonce);
         byte[] msg;

@@ -91,7 +91,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                     throw new Exception("Challenge not fulfilled by the other user");
                 }
                 clientPort = (int)receivedChallenge[1];
-                sendChallenge(oout,req.getChallengeNonce(),-1);
+                sendChallenge(oout,req.getTimestamp().toEpochMilli(),-1);
                 success = true;
                 requestIpAddress = s.getInetAddress().getHostAddress();
                 requestPort = s.getPort();
@@ -126,7 +126,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
     private Request generateRequest() throws CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, SignatureException{
         this.authKey = CryptoManager.generateAES256RandomSecretKey();
         Request req = new Request(issuer,this.req.getIssuer(),myCertificate,authKey);
-        this.myNonce =req.setRandomChallenge();
+        this.myNonce =req.getTimestamp().toEpochMilli();
         req.sign(myKey);
         return req;
     }      
