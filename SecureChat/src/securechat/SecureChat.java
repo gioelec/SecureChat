@@ -91,6 +91,7 @@ public class SecureChat extends Application {
             this.senderThread = new Thread(senderRunnable);
             myL.add(new Message(username,new Date(),"You're connected",3));
             receiverThread.start();
+            sendBuffer.clear();
             senderThread.start();
         } catch(Exception e) {
             e.printStackTrace();
@@ -279,9 +280,14 @@ public class SecureChat extends Application {
         Thread st;
         rt=(this.receiverRunnable==null)?protocolServerRunnable.getReceiver():receiverRunnable;
         st=(this.senderThread==null)?protocolServerRunnable.getSender():senderThread;
-        st.interrupt();
-        sendBuffer.add("int");
+        if(st.isAlive()){
+            st.interrupt();
+            System.out.println("ADDING INT TO THE BLOCKINGQUEUE--main");
+            sendBuffer.add("int");
+        }else
+            System.out.println("STOP IT IS ALREADY DEAD----main");
         rt.stopReceiver();
+        sendBuffer.clear();
         //myL.add(new Message(myUsername,new Date(),"Connection closed",2)); HIDE DOUBLE MESSAGE 
     }
     

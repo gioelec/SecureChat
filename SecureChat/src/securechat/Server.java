@@ -111,13 +111,16 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
             receiverThread.start();
             SharedState.getInstance().protocolDone(success);
             System.out.println("Before join---Server");
-            try {
-                
+            try {             
                 receiverThread.join();
                 System.out.println("Receiver join done---Server");
-                senderThread.interrupt();
-                sendBuffer.add("int");                
-                senderThread.join();
+                if(senderThread.isAlive()){
+                    senderThread.interrupt();
+                    System.out.println("ADDING INT TO THE BLOCKINGQUEUE--server");
+                    sendBuffer.add("int");
+                    senderThread.join();
+                }else
+                    System.out.println("STOP IT IS ALREADY DEAD---server");
                 System.out.println("Sender join done---Server");
             } catch(Exception e) {}
         }
