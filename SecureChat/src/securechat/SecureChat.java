@@ -7,6 +7,7 @@ import cryptoutils.communication.SecureEndpoint;
 import cryptoutils.communication.TrustedPartyInterface;
 import cryptoutils.hashutils.HashManager;
 import cryptoutils.messagebuilder.MessageBuilder;
+import java.awt.Color;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -47,7 +48,7 @@ public class SecureChat extends Application {
     private final ObservableList<Message> myL = FXCollections.observableArrayList();
     private final ListView<Message> l = new ListView<>(myL);
     private static BlockingQueue<String> sendBuffer = new LinkedBlockingQueue<>();
-    private final TextArea messageArea = new TextArea();
+    private final TextField messageArea = new TextField();
     private final Button sendButton = new Button("SEND");
     private final Properties properties = new Properties();
     private Stage appStage;
@@ -156,6 +157,12 @@ public class SecureChat extends Application {
     
     
     private GridPane buildSceneGrid(HBox connectControls) {
+        HBox bottomControls = new HBox(5);
+        bottomControls.getChildren().addAll(sendButton,disconnectButton);
+        sendButton.setMaxWidth(Double.MAX_VALUE);
+        disconnectButton.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(sendButton,Priority.ALWAYS);
+        HBox.setHgrow(disconnectButton,Priority.ALWAYS);        
         GridPane root = new GridPane();
         root.setPadding(new Insets(10,10,10,10));
         root.setHgap(5);
@@ -165,14 +172,12 @@ public class SecureChat extends Application {
         root.add(connectControls,0,1,2,1);
         root.add(l,0,2,2,1);
         root.add(messageArea,0,3,2,1);
-        root.add(sendButton,0,4,2,1);
-        root.add(disconnectButton,0,4,2,1);
+        root.add(bottomControls,0,4,2,1);
         GridPane.setHalignment(connectToLabel, HPos.CENTER);
         GridPane.setHalignment(connectControls,HPos.CENTER);
+        GridPane.setHalignment(bottomControls, HPos.CENTER);
         GridPane.setHalignment(messageArea, HPos.CENTER);
-        sendButton.setMaxWidth(Double.MAX_VALUE);
-        GridPane.setHalignment(sendButton, HPos.CENTER);   
-        GridPane.setFillWidth(sendButton, Boolean.TRUE);
+        GridPane.setFillWidth(bottomControls, Boolean.TRUE);
         GridPane.setFillWidth(disconnectButton, Boolean.TRUE);
         return root;
     }
