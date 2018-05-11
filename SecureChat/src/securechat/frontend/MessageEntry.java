@@ -38,9 +38,13 @@ public class MessageEntry extends ListCell<Message> {
                 content.setFill(Color.WHITESMOKE);
                 date.setTextFill(Color.WHITESMOKE);
             } else {
+                user.setTextFill(Color.BLACK); 
+                content.setFill(Color.BLACK);
+                date.setTextFill(Color.BLACK);                
                 this.getStyleClass().add("message");
             }
             switch(m.getType()) {
+                case 0: this.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY))); break;
                 case 1: this.setBackground(new Background(new BackgroundFill(Color.BLUE, CornerRadii.EMPTY, Insets.EMPTY)));break;
                 case 2: this.setBackground(new Background(new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY)));break;
                 case 3: this.setBackground(new Background(new BackgroundFill(Color.GREEN, CornerRadii.EMPTY, Insets.EMPTY)));break;
