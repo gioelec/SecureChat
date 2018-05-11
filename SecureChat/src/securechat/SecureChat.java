@@ -155,7 +155,6 @@ public class SecureChat extends Application {
         HBox.setHgrow(sendButton,Priority.ALWAYS);
         HBox.setHgrow(disconnectButton,Priority.ALWAYS);        
         GridPane root = new GridPane();
-        root.setPadding(new Insets(10,10,10,10));
         root.setHgap(5);
         root.setVgap(10);
         root.setAlignment(Pos.TOP_CENTER);
@@ -225,7 +224,7 @@ public class SecureChat extends Application {
         HBox connectControls = buildConnectControls();
         configureListView();
         GridPane root = buildSceneGrid(connectControls);
-        Scene scene = new Scene(root, 320, 600);
+        Scene scene = new Scene(root, 280, 530);
         primaryStage.setTitle("SecureChat - Disconnected");
         primaryStage.setResizable(false);
         primaryStage.setScene(scene);
