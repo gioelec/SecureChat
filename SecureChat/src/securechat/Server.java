@@ -37,7 +37,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
     private ObservableList<Message> messageList;
     private int clientPort;
     private Receiver receiverRunnable = null;
-    private Sender senderRunnable = null;
+    private Thread senderThread = null;
     
     public Server(int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate, ObservableList<Message> messageList, BlockingQueue<String> sendBuffer,ArrayList<Certificate> crl){
         super(myKey,issuer, myCertificate, CACertificate,crl);
@@ -104,19 +104,21 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
             System.out.println("PROTOCOL ENDED CORRECTLY WITH: "+requestIpAddress+":"+clientPort);
             System.out.println("Creating messaging thread with: "+requestIpAddress+":"+clientPort+1);
             receiverRunnable = new Receiver(messageList, req.getIssuer(), authKey, symKey, port+1, requestIpAddress);
-            senderRunnable = new Sender(sendBuffer, authKey, symKey, clientPort+1, requestIpAddress);
+            Runnable senderRunnable = new Sender(sendBuffer, authKey, symKey, clientPort+1, requestIpAddress);
             Thread receiverThread = new Thread(receiverRunnable);
-            Thread senderThread = new Thread(senderRunnable);
+            this.senderThread = new Thread(senderRunnable);
             senderThread.start();
             receiverThread.start();
             SharedState.getInstance().protocolDone(success);
             System.out.println("Before join---Server");
             try {
                 
-                senderThread.join();
-                System.out.println("Sender join done---Server");
                 receiverThread.join();
                 System.out.println("Receiver join done---Server");
+                senderThread.interrupt();
+                sendBuffer.add("int");                
+                senderThread.join();
+                System.out.println("Sender join done---Server");
             } catch(Exception e) {}
         }
     }
@@ -135,8 +137,8 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
         req.sign(myKey);
         return req;
     }      
-    public Sender getSender(){
-        return senderRunnable;
+    public Thread getSender(){
+        return senderThread;
     }
     public Receiver getReceiver(){
         return receiverRunnable;
