@@ -117,7 +117,6 @@ public class SecureChat extends Application {
         boolean protocolResult = SharedState.getInstance().waitProtocol();
         if(protocolResult) myL.add(new Message("...",new Date(),"You're connected",3));
         else myL.add(new Message("...",new Date(),"Connection failed",2));
-
         messageArea.clear();
     }
     
@@ -283,7 +282,7 @@ public class SecureChat extends Application {
         st.interrupt();
         sendBuffer.add("int");
         rt.stopReceiver();
-        myL.add(new Message(myUsername,new Date(),"Connection closed",2));
+        //myL.add(new Message(myUsername,new Date(),"Connection closed",2)); HIDE DOUBLE MESSAGE 
     }
     
 }
