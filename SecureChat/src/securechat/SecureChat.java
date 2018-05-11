@@ -59,7 +59,7 @@ public class SecureChat extends Application {
     private Certificate authorityCertificate;
     private int listeningPort;
     private Receiver receiverRunnable;
-    private Sender senderRunnable;
+    private Thread senderThread;
     private Server protocolServerRunnable;
     private String port;
     private HBox buildConnectControls() {
@@ -95,9 +95,9 @@ public class SecureChat extends Application {
             byte[] macKey = connectThreadRunnable.getAuthKey();
             byte[] symKey = connectThreadRunnable.getSymKey();
             receiverRunnable = new Receiver(myL, username, macKey, symKey, listeningPort+1, hostName);
-            senderRunnable = new Sender(sendBuffer, macKey, symKey, Integer.parseInt(port)+1, hostName);
+            Runnable senderRunnable = new Sender(sendBuffer, macKey, symKey, Integer.parseInt(port)+1, hostName);
             Thread receiverThread = new Thread(receiverRunnable);
-            Thread senderThread = new Thread(senderRunnable);
+            this.senderThread = new Thread(senderRunnable);
             myL.add(new Message(username,new Date(),"You're connected",3));
             receiverThread.start();
             senderThread.start();
@@ -287,10 +287,11 @@ public class SecureChat extends Application {
     private void handleDisconnect() {
         disconnectButton.disableProperty();
         Receiver rt;
-        Sender st;
+        Thread st;
         rt=(this.receiverRunnable==null)?protocolServerRunnable.getReceiver():receiverRunnable;
-        st=(this.senderRunnable==null)?protocolServerRunnable.getSender():senderRunnable;
-        st.stopSender();
+        st=(this.senderThread==null)?protocolServerRunnable.getSender():senderThread;
+        st.interrupt();
+        sendBuffer.add("int");
         rt.stopReceiver();
         myL.add(new Message(myUsername,new Date(),"Connection closed",2));
     }
