@@ -177,12 +177,12 @@ public class SecureChat extends Application {
     
     private void configureListView() {  
         l.setCellFactory((ListView<Message> p) -> {
-            l.getItems().addListener(new ListChangeListener<Message>(){
+           /* l.getItems().addListener(new ListChangeListener<Message>(){
                 @Override
                 public void onChanged(javafx.collections.ListChangeListener.Change<? extends Message> c) {
                     l.scrollTo(c.getList().size()-1);
                 }
-            });
+            });*/
             MessageEntry cell = new MessageEntry();
             return cell;
         });
