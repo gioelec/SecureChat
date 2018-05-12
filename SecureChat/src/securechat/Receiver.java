@@ -51,10 +51,10 @@ public class Receiver extends MessagingThread implements Runnable {
                 System.out.println("MSG RECEIVED "+msg+" -- receiver");
                 try{
                     messageList.add(new Message(sender,new Date(), msg));
+                    System.out.println("MSG ADDED TO THE LIST -- receiver");
                 }catch(Exception i){
                     System.err.println("E ZITTO!");
                 }
-                System.out.println("MSG ADDED TO THE LIST -- receiver");
             }
         }catch (Exception ex) {
             System.out.println("RECEIVER STOPPED---receiver");

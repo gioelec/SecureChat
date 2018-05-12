@@ -79,7 +79,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 //SEND CERTIFICATE
                 oout.writeObject(myCertificate);
                 if(!getRequest(oin)){
-                    System.err.println("Request corrupted the signature is not authentic");//TODO in request verify
+                    System.err.println("REQUEST CORRUPTED OR NOT AUTHENTIC---server");//TODO in request verify
                     continue;
                 }
 
@@ -87,7 +87,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 oout.writeObject(myReq.getEncrypted(req.getPublicKey()));
                 Object[] receivedChallenge = receiveChallenge(oin);
                 if(!(boolean)receivedChallenge[0]){
-                    System.err.println("Challenge not fulfilled by the other user");
+                    System.err.println("CHALLENGE NOT FULFILLED BY THE OTHER USER---server");
                     throw new Exception("Challenge not fulfilled by the other user");
                 }
                 clientPort = (int)receivedChallenge[1];
@@ -101,19 +101,21 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 continue;
             }
             if(!success) continue;
-            System.out.println("PROTOCOL ENDED CORRECTLY WITH: "+requestIpAddress+":"+clientPort);
-            System.out.println("Creating messaging thread with: "+requestIpAddress+":"+clientPort+1);
+            System.out.println("PROTOCOL ENDED CORRECTLY WITH: "+requestIpAddress+":"+clientPort+"----server");
+            System.out.println("CREATING MESSAGING THREAD WITH: "+requestIpAddress+":"+clientPort+1+"---server");
             receiverRunnable = new Receiver(messageList, req.getIssuer(), authKey, symKey, port+1, requestIpAddress);
             Runnable senderRunnable = new Sender(sendBuffer, authKey, symKey, clientPort+1, requestIpAddress);
             Thread receiverThread = new Thread(receiverRunnable);
             this.senderThread = new Thread(senderRunnable);
+            sendBuffer.clear();
+            System.out.println("QUEUE CLEARED---server");
             senderThread.start();
             receiverThread.start();
             SharedState.getInstance().protocolDone(success);
-            System.out.println("Before join---Server");
+            System.out.println("BEFORE JOIN---Server");
             try {             
                 receiverThread.join();
-                System.out.println("Receiver join done---Server");
+                System.out.println("RECEIVER JOIN DONE---Server");
                 if(senderThread.isAlive()){
                     senderThread.interrupt();
                     System.out.println("ADDING INT TO THE BLOCKINGQUEUE--server");
@@ -121,7 +123,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                     senderThread.join();
                 }else
                     System.out.println("STOP IT IS ALREADY DEAD---server");
-                System.out.println("Sender join done---Server");
+                System.out.println("SENDER JOIN DONE---Server");
             } catch(Exception e) {}
         }
     }

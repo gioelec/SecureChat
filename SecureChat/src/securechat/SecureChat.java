@@ -92,6 +92,7 @@ public class SecureChat extends Application {
             myL.add(new Message(username,new Date(),"You're connected",3));
             receiverThread.start();
             sendBuffer.clear();
+            System.out.println("QUEUE CLEARED--main");
             senderThread.start();
         } catch(Exception e) {
             e.printStackTrace();

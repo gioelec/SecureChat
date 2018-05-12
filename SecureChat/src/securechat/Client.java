@@ -1,23 +1,13 @@
 package securechat;
 
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
+import java.io.*;
 import java.net.Socket;
 import cryptoutils.communication.Request;
-import java.io.InputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.SignatureException;
+import java.security.*;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
+import java.security.cert.*;
+import javax.crypto.*;
 import cryptoutils.cipherutils.CryptoManager;
 import java.util.ArrayList;
 
@@ -49,24 +39,24 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
                 ObjectOutputStream oout = new ObjectOutputStream(out);
                 ObjectInputStream oin = new ObjectInputStream(in);
             ){
-                System.out.println("Sending request");
+                System.out.println("SENDING REQUEST---client");
                 oout.writeObject("<REQUEST>"+issuer+"</REQUEST>");
                 System.out.println("REQUEST SENT");
                 otherCertificate = (Certificate)oin.readObject();
-                System.out.println("CERTIFICATE RECEIVED");
+                System.out.println("CERTIFICATE RECEIVED---client");
                 myReq = generateRequest();                
                 oout.writeObject(myReq.getEncrypted(otherCertificate.getPublicKey())); // THIS PUBLIC KEY MUST BE PROVIDED BY A CERTIICATE REQ OBJECT IS NULL
                 if(!getRequest(oin)){
-                    System.err.println("Request corrupted the signature is not authentic");//TODO in request verify
+                    System.err.println("REQUEST CORRUPTED THE SIGNATURE IS NOT AUTHENTIC--client");//TODO in request verify
                     return;
                 }
-                System.out.println("Got reply -- Sending port "+localPort);                
+                System.out.println("GOT REPLY -- Sending port "+localPort +"---client");                
                 sendChallenge(oout,req.getTimestamp().toEpochMilli(),localPort);
                 if(!(boolean)receiveChallenge(oin)[0]){
-                    System.err.println("Challenge not fulfilled by the other user");
+                    System.err.println("CHALLENGE NOT FULFILLED BY THE OTHER USER ---client");
                     return;
                 }
-                System.out.println("PROTOCOL ENDED CORRECTLY WITH: "+hostName+":"+remotePort);
+                System.out.println("PROTOCOL ENDED CORRECTLY WITH: "+hostName+":"+remotePort+"--client");
                 success = true;
             }catch(Exception e){
                 e.printStackTrace();
