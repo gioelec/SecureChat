@@ -20,6 +20,7 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
     private String hostName;
     private Certificate otherCertificate;
     private String recipient;
+    private Socket sRef;
 
     public Client(String hostName, int remotePort,int localPort, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate,String recipient,ArrayList<Certificate> crl){
         super(myKey,issuer, myCertificate, CACertificate,crl);
@@ -39,6 +40,7 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
                 ObjectOutputStream oout = new ObjectOutputStream(out);
                 ObjectInputStream oin = new ObjectInputStream(in);
             ){
+                sRef=s;
                 System.out.println("SENDING REQUEST---client");
                 oout.writeObject("<REQUEST>"+issuer+"</REQUEST>");
                 System.out.println("REQUEST SENT");
@@ -59,15 +61,15 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
                 System.out.println("PROTOCOL ENDED CORRECTLY WITH: "+hostName+":"+remotePort+"--client");
                 success = true;
             }catch(Exception e){
-                e.printStackTrace();
+                System.out.println("EXCEPTION---client");
+                //e.printStackTrace();
             }
         //}
     }
     
     public Certificate getCertificate() {
         return otherCertificate;
-    }
-    
+    }  
     private boolean getRequest(ObjectInputStream obj) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, CertificateException{
         this.req = Request.fromEncryptedRequest((byte[]) obj.readObject(),myKey); //first we read the length we expect LBA||nb||S(sb,LBA||nb)
         this.authKey = req.getSecretKey();
@@ -82,4 +84,7 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
         req.sign(myKey);
         return req;
     }       
+    /*public void stopClient(){
+        try{sRef.close();}catch(Exception e){}
+    }*/
 }

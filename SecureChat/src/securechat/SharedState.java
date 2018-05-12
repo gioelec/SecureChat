@@ -5,6 +5,7 @@
  */
 package securechat;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -39,7 +40,18 @@ public class SharedState {
     public boolean waitForResponse() {
         requestLock.lock();
         try {
-            while(!responseAvailable) {responseAvailableCondition.await();}
+            long curTime = System.currentTimeMillis();
+            long remained = 9000;
+            long expires = curTime+remained;
+            while(!responseAvailable) {
+                responseAvailableCondition.await(remained,TimeUnit.MILLISECONDS);
+                remained = expires-System.currentTimeMillis();
+                if(remained<=0 && !responseAvailable){
+                    //protocolDone(false); graphical feedback to the user?
+                    break;
+                }
+            }
+            System.out.println("10S ELPAPSED OR AN ANSWER WAS GIVEN--sharedstate");
             responseAvailable = false;
         } catch(Exception e) {e.printStackTrace(); return false;}
         finally {requestLock.unlock();}
@@ -58,6 +70,7 @@ public class SharedState {
     public void protocolDone(boolean result) {
         hpStatusLock.lock();
         try {
+            setPendingRequest(false);
             handshakeProtocolTerminated=true;
             handshakeProtocolTerminationStatus=result;
             System.out.println("Signalling...");

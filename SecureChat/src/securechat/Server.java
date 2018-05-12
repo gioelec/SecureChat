@@ -21,6 +21,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import cryptoutils.cipherutils.CryptoManager;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
@@ -64,8 +65,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 ObjectOutputStream oout = new ObjectOutputStream(out);
             ){
                 System.out.println("SERVER WAITING FOR REQUEST");///////////////////////////////////////////////
-                String requestHeader = (String)oin.readObject();        
-                
+                String requestHeader = (String)oin.readObject();          
                 System.out.println("RECEIVED REQUEST");
                 try {
                     SharedState.getInstance().setPendingRequest(true);
@@ -73,16 +73,27 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                     System.out.println("WAITING FOR RESPONSE...");
                     boolean res = SharedState.getInstance().waitForResponse();
                     System.out.println("RESPONSE: "+res);                    
-                    if(!res) continue;
-                } catch(Exception e) {e.printStackTrace();}                
+                    if(!res){
+                        System.out.println("TIMER EXPIRED OR ANSWER NOT Y, SETTING PROTOCOL DONE TO FALSE--server");
+                        SharedState.getInstance().protocolDone(res);
+                        continue;
+                    }
+                }catch(Exception e) {
+                    e.printStackTrace();
+                    continue;
+                }  
                 // CHECK REQUEST HEADER FORMAT
                 //SEND CERTIFICATE
-                oout.writeObject(myCertificate);
+               // try{
+                    oout.writeObject(myCertificate);
+                /*}catch(Exception e){
+                    System.out.println("OTHER USER TIMEOUT ALREADY EXPIRED---server");
+                    continue;
+                }*/
                 if(!getRequest(oin)){
                     System.err.println("REQUEST CORRUPTED OR NOT AUTHENTIC---server");//TODO in request verify
                     continue;
                 }
-
                 myReq = generateRequest();
                 oout.writeObject(myReq.getEncrypted(req.getPublicKey()));
                 Object[] receivedChallenge = receiveChallenge(oin);
@@ -96,6 +107,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 requestIpAddress = s.getInetAddress().getHostAddress();
                 requestPort = s.getPort();
             }catch(Exception e){
+                System.out.println("IN EXCEPTION SETTING PROTOCOLD DONE TO FALSE--server");
                 SharedState.getInstance().protocolDone(false);
                 e.printStackTrace();
                 continue;
@@ -111,6 +123,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
             System.out.println("QUEUE CLEARED---server");
             senderThread.start();
             receiverThread.start();
+            System.out.println("SETTING PROTOCOL DONE TO TRUE--server");
             SharedState.getInstance().protocolDone(success);
             System.out.println("BEFORE JOIN---Server");
             try {             

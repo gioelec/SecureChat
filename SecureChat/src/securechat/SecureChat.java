@@ -79,7 +79,8 @@ public class SecureChat extends Application {
         try {
             connectThread.join(10000);
             if(!connectThreadRunnable.getHandshakeResult()) {
-                connectThread.interrupt();
+                connectThread.interrupt();   ///delete?
+                //connectThreadRunnable.stopClient();
                 myL.add(new Message(username,new Date(),"Connection error",2));
                 return;
             }
@@ -112,6 +113,7 @@ public class SecureChat extends Application {
     private void handleRequestAnswer(String answer) {
         System.out.println("There is a pending request...");
         boolean response = (answer.equals("Y")||answer.equals("y"));
+        System.out.println("HANDLE REQUEST SETTING RESPONSE: "+response+" --main");
         SharedState.getInstance().setResponse(response);
         if(!response)
             return;
