@@ -113,8 +113,8 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 continue;
             }
             if(!success) continue;
-            System.out.println("PROTOCOL ENDED CORRECTLY WITH: "+requestIpAddress+":"+clientPort+"----server");
-            System.out.println("CREATING MESSAGING THREAD WITH: "+requestIpAddress+":"+clientPort+1+"---server");
+            System.out.println("PROTOCOL ENDED CORRECTLY WITH: "+requestIpAddress+":"+clientPort+" ----server");
+            System.out.println("CREATING MESSAGING THREAD WITH: "+requestIpAddress+":"+clientPort+1+" USERNAME: "+req.getIssuer()+"---server");
             receiverRunnable = new Receiver(messageList, req.getIssuer(), authKey, symKey, port+1, requestIpAddress);
             Runnable senderRunnable = new Sender(sendBuffer, authKey, symKey, clientPort+1, requestIpAddress);
             Thread receiverThread = new Thread(receiverRunnable);

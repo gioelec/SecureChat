@@ -175,12 +175,19 @@ public class SecureChat extends Application {
         return root;
     }
     
-    private void configureListView() {        
+    private void configureListView() {  
         l.setCellFactory((ListView<Message> p) -> {
+            l.getItems().addListener(new ListChangeListener<Message>(){
+                @Override
+                public void onChanged(javafx.collections.ListChangeListener.Change<? extends Message> c) {
+                    l.scrollTo(c.getList().size()-1);
+                }
+            });
             MessageEntry cell = new MessageEntry();
             return cell;
         });
     }
+    
     private void loadCRL(){
         try{
             Registry registry = LocateRegistry.getRegistry("localhost",9999);
