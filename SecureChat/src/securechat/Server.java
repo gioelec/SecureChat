@@ -51,6 +51,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
     @Override
     public void run(){
         while(true){
+            SharedState.getInstance().setConnected(false);            
             System.out.println("SERVER ISTANTIATED @ PORT: "+port);
             String requestIpAddress = null;
             int requestPort = -1;
@@ -69,7 +70,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 System.out.println("RECEIVED REQUEST");
                 try {
                     SharedState.getInstance().setPendingRequest(true);
-                    messageList.add(new Message(requestHeader, new Date(), "Do you want to connect? Y/N?",1));
+                    messageList.add(new Message(requestHeader, new Date(), "Do you want to connect?",1));
                     System.out.println("WAITING FOR RESPONSE...");
                     boolean res = SharedState.getInstance().waitForResponse();
                     System.out.println("RESPONSE: "+res);                    
@@ -81,7 +82,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 }catch(Exception e) {
                     e.printStackTrace();
                     continue;
-                }  
+                }
                 // CHECK REQUEST HEADER FORMAT
                 //SEND CERTIFICATE
                // try{
@@ -113,6 +114,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 continue;
             }
             if(!success) continue;
+            SharedState.getInstance().setConnected(true);
             System.out.println("PROTOCOL ENDED CORRECTLY WITH: "+requestIpAddress+":"+clientPort+" ----server");
             System.out.println("CREATING MESSAGING THREAD WITH: "+requestIpAddress+":"+clientPort+1+" USERNAME: "+req.getIssuer()+"---server");
             receiverRunnable = new Receiver(messageList, req.getIssuer(), authKey, symKey, port+1, requestIpAddress);

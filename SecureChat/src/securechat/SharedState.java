@@ -10,6 +10,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.value.WritableBooleanValue;
 
 /**
  *
@@ -20,17 +25,19 @@ public class SharedState {
     private boolean responseAvailable = false;
     private Lock requestLock = new ReentrantLock();
     private Condition responseAvailableCondition = requestLock.newCondition();
-    private AtomicBoolean pendingRequest = new AtomicBoolean(false);
     private boolean handshakeProtocolTerminated = false;
     private boolean handshakeProtocolTerminationStatus = false;
     private Lock hpStatusLock = new ReentrantLock();
     private Condition handshakeStatusAvailable = hpStatusLock.newCondition();
     private static SharedState _instance;
+    private SimpleBooleanProperty pendingRequest = new SimpleBooleanProperty(false);
+    private SimpleBooleanProperty isConnected = new SimpleBooleanProperty(false);
+    public BooleanBinding sendBinding = Bindings.createBooleanBinding(() -> !isConnected.getValue(), isConnected);
+    public BooleanBinding disconnectBinding = Bindings.createBooleanBinding(() -> !isConnected.getValue(), isConnected);
+    public BooleanBinding connectBinding = Bindings.createBooleanBinding(() -> isConnected.getValue(), isConnected);
+    public BooleanBinding acceptBinding = Bindings.createBooleanBinding(() -> !pendingRequest.getValue(), pendingRequest);
     
-    
-    private SharedState() {
-        //TODO
-    }
+    private SharedState() {}
     
     public static SharedState getInstance() {
         if(_instance == null) _instance = new SharedState();
@@ -92,13 +99,16 @@ public class SharedState {
     }
     
     public boolean isRequestPending() {
-        return pendingRequest.getAndSet(false);
+        return pendingRequest.get();
     }
     
     public void setPendingRequest(boolean state) {
         pendingRequest.set(state);
     }
-            
+    
+    public void setConnected(boolean v) {
+        isConnected.set(v);   
+    }
     
     
 }

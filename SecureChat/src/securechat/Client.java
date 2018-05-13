@@ -32,7 +32,7 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
     }
 
     public void run(){
-        //while(true){
+            SharedState.getInstance().setConnected(false);
             try(
                 Socket s = new Socket(hostName,remotePort);
                 InputStream in = s.getInputStream();
@@ -60,9 +60,10 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
                 }
                 System.out.println("PROTOCOL ENDED CORRECTLY WITH: "+hostName+":"+remotePort+"--client");
                 success = true;
+                SharedState.getInstance().setConnected(true);
             }catch(Exception e){
                 System.out.println("EXCEPTION---client");
-                //e.printStackTrace();
+                SharedState.getInstance().setConnected(false);
             }
         //}
     }

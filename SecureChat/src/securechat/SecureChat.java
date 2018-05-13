@@ -25,7 +25,6 @@ import javafx.geometry.*;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert.*;
-import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import securechat.frontend.MessageEntry;
@@ -35,6 +34,7 @@ public class SecureChat extends Application {
     private final Label connectToLabel = new Label("NAME AND HOST TO CONNECT WITH");
     private final TextField connectToField = new TextField();
     private final Button connectButton = new Button("CONNECT");
+    private final Button acceptButton = new Button("ACCEPT");
     private final Button disconnectButton = new Button("DISCONNECT");
     private final ObservableList<Message> myL = FXCollections.observableArrayList();
     private final ListView<Message> l = new ListView<>(myL);
@@ -55,10 +55,11 @@ public class SecureChat extends Application {
     private String port;
     private HBox buildConnectControls() {
         HBox connectControls = new HBox(5);
-        connectControls.getChildren().addAll(connectToField,connectButton);
+        connectControls.getChildren().addAll(connectToField,connectButton,acceptButton);
         HBox.setHgrow(connectButton,Priority.ALWAYS);
         HBox.setHgrow(connectToField,Priority.ALWAYS);  
         connectButton.setOnAction(ev -> {handleConnect();});
+        acceptButton.setOnAction(ev -> {handleRequestAnswer();});
         return connectControls;
     }
     
@@ -104,22 +105,16 @@ public class SecureChat extends Application {
         connectToField.setId("usernameHostInput");
         connectToField.setPromptText("username@host"); 
         messageArea.setPromptText("Write your message here...");
-        connectToField.setOnKeyTyped((KeyEvent event) -> {
-            if(connectToField.getText().isEmpty()) connectButton.setDisable(true);
-            else connectButton.setDisable(false);
-        });
     }
     
-    private void handleRequestAnswer(String answer) {
-        System.out.println("There is a pending request...");
-        boolean response = (answer.equals("Y")||answer.equals("y"));
-        System.out.println("HANDLE REQUEST SETTING RESPONSE: "+response+" --main");
-        SharedState.getInstance().setResponse(response);
-        if(!response)
-            return;
+    private void handleRequestAnswer() {
+        SharedState.getInstance().setResponse(true);
         System.out.println("Waiting for HP protocol to terminate...");
         boolean protocolResult = SharedState.getInstance().waitProtocol();
-        if(protocolResult) myL.add(new Message("...",new Date(),"You're connected",3));
+        if(protocolResult) {
+            SharedState.getInstance().setConnected(true);
+            myL.add(new Message("...",new Date(),"You're connected",3));
+        }
         else myL.add(new Message("...",new Date(),"Connection failed",2));
         messageArea.clear();
     }
@@ -127,10 +122,6 @@ public class SecureChat extends Application {
     private void handleMessageSend() {
         String text = messageArea.getText();
         if(text.isEmpty()) return;
-        if(SharedState.getInstance().isRequestPending()) {
-            handleRequestAnswer(text);
-            return;
-        }
         Message m = new Message(myUsername,new Date(),text);
         myL.add(m);
         sendBuffer.add(m.getContent());
@@ -144,11 +135,7 @@ public class SecureChat extends Application {
         disconnectButton.setOnAction(ev -> {handleDisconnect();});
     }
     
-    private void setOnConnectButtonClickHandler() {
-        connectButton.setDisable(true);
-    }    
-    
-    
+
     
     private GridPane buildSceneGrid(HBox connectControls) {
         HBox bottomControls = new HBox(5);
@@ -226,9 +213,12 @@ public class SecureChat extends Application {
     
     @Override
     public void start(Stage primaryStage) {
+        sendButton.disableProperty().bind(SharedState.getInstance().sendBinding.or(messageArea.textProperty().isEmpty()));
+        disconnectButton.disableProperty().bind(SharedState.getInstance().disconnectBinding);        
+        connectButton.disableProperty().bind(SharedState.getInstance().connectBinding.or(connectToField.textProperty().isEmpty()));        
+        acceptButton.disableProperty().bind(SharedState.getInstance().acceptBinding);
         Thread.setDefaultUncaughtExceptionHandler(SecureChat::dummy);
         configureTextFields();
-        setOnConnectButtonClickHandler();
         setOnSendButtonClickHandler();
         setOnDisconnectButtonClickHandler();
         HBox connectControls = buildConnectControls();
@@ -298,7 +288,7 @@ public class SecureChat extends Application {
             System.out.println("STOP IT IS ALREADY DEAD----main");
         rt.stopReceiver();
         sendBuffer.clear();
-        //myL.add(new Message(myUsername,new Date(),"Connection closed",2)); HIDE DOUBLE MESSAGE 
+        SharedState.getInstance().setConnected(false);
     }
     
 }
