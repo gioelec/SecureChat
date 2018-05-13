@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javafx.collections.ObservableList;
 import securechat.model.Message;
 
@@ -39,6 +40,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
     private int clientPort;
     private Receiver receiverRunnable = null;
     private Thread senderThread = null;
+    private ServerSocket ssRef = null;
     
     public Server(int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate, ObservableList<Message> messageList, BlockingQueue<String> sendBuffer,ArrayList<Certificate> crl){
         super(myKey,issuer, myCertificate, CACertificate,crl);
@@ -46,6 +48,12 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
         System.out.println(messageList==null);
         this.messageList = messageList;
         this.sendBuffer = sendBuffer;
+    }
+    
+    public void stopProtocolServer() {
+        try {
+            ssRef.close();
+        } catch(Exception e) {}
     }
 
     @Override
@@ -58,13 +66,13 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
             Object[] confReturn = null;
             try(
                 ServerSocket ss = new ServerSocket(port, 1, InetAddress.getByName("0.0.0.0"));
-               // ServerSocket ss = new ServerSocket(port);
                 Socket s = ss.accept();
                 InputStream in = s.getInputStream();
                 OutputStream out = s.getOutputStream();
                 ObjectInputStream oin = new ObjectInputStream(in);
                 ObjectOutputStream oout = new ObjectOutputStream(out);
             ){
+                ssRef = ss;
                 System.out.println("SERVER WAITING FOR REQUEST");///////////////////////////////////////////////
                 String requestHeader = (String)oin.readObject();          
                 System.out.println("RECEIVED REQUEST");
@@ -83,16 +91,9 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                     e.printStackTrace();
                     continue;
                 }
-                // CHECK REQUEST HEADER FORMAT
-                //SEND CERTIFICATE
-               // try{
-                    oout.writeObject(myCertificate);
-                /*}catch(Exception e){
-                    System.out.println("OTHER USER TIMEOUT ALREADY EXPIRED---server");
-                    continue;
-                }*/
+                oout.writeObject(myCertificate);
                 if(!getRequest(oin)){
-                    System.err.println("REQUEST CORRUPTED OR NOT AUTHENTIC---server");//TODO in request verify
+                    System.err.println("REQUEST CORRUPTED OR NOT AUTHENTIC---server");
                     continue;
                 }
                 myReq = generateRequest();
@@ -111,6 +112,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 System.out.println("IN EXCEPTION SETTING PROTOCOLD DONE TO FALSE--server");
                 SharedState.getInstance().protocolDone(false);
                 e.printStackTrace();
+                if(Thread.interrupted()) return;
                 continue;
             }
             if(!success) continue;
@@ -137,7 +139,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                     sendBuffer.add("int");
                     senderThread.join();
                 }else
-                    System.out.println("STOP IT IS ALREADY DEAD---server");
+                System.out.println("STOP IT IS ALREADY DEAD---server");
                 System.out.println("SENDER JOIN DONE---Server");
             } catch(Exception e) {}
         }

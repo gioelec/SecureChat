@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.concurrent.*;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.*;
 import javafx.geometry.*;
 import javafx.scene.Scene;
@@ -52,6 +53,7 @@ public class SecureChat extends Application {
     private Receiver receiverRunnable;
     private Thread senderThread;
     private Server protocolServerRunnable;
+    private Thread protocolServerThread;
     private String port;
     private HBox buildConnectControls() {
         HBox connectControls = new HBox(5);
@@ -238,8 +240,15 @@ public class SecureChat extends Application {
         System.out.println("Certificates in CRL:"+certificateRevocationList.size());
         System.out.println("Protocol listener started...");
         protocolServerRunnable = new Server(listeningPort,pk,myUsername,myCertificate,authorityCertificate,myL,sendBuffer,certificateRevocationList);
-        Thread protocolServerThread = new Thread(protocolServerRunnable);
+        protocolServerThread = new Thread(protocolServerRunnable);
         protocolServerThread.start();
+        primaryStage.setOnCloseRequest(ev -> {
+            handleDisconnect();
+            protocolServerThread.interrupt();
+            protocolServerRunnable.stopProtocolServer();
+            Platform.exit();
+            System.exit(1);
+        });
     }
     
     
@@ -280,6 +289,7 @@ public class SecureChat extends Application {
         Thread st;
         rt=(this.receiverRunnable==null)?protocolServerRunnable.getReceiver():receiverRunnable;
         st=(this.senderThread==null)?protocolServerRunnable.getSender():senderThread;
+        if(rt == null || st == null) return;
         if(st.isAlive()){
             st.interrupt();
             System.out.println("ADDING INT TO THE BLOCKINGQUEUE--main");

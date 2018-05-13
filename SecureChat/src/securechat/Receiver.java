@@ -45,20 +45,18 @@ public class Receiver extends MessagingThread implements Runnable {
                 if(rcv==null){
                     System.err.println("OTHER USER LEFT YOU--receiver");
                     messageList.add(new Message(sender,new Date(),"Connection closed",2));
+                    SharedState.getInstance().setConnected(false);                    
                     return;
                 }
                 msg = new String(rcv);
                 System.out.println("MSG RECEIVED "+msg+" -- receiver");
-                try{
-                    messageList.add(new Message(sender,new Date(), msg));
-                    System.out.println("MSG ADDED TO THE LIST -- receiver");
-                }catch(Exception i){
-                    System.err.println("E ZITTO!");
-                }
+                messageList.add(new Message(sender,new Date(), msg));
+                System.out.println("MSG ADDED TO THE LIST -- receiver");
             }
         }catch (Exception ex) {
             System.out.println("RECEIVER STOPPED---receiver");
             System.out.println("RECEIVER EXCEPTION -- " + ex.getMessage());
         }    
+        SharedState.getInstance().setConnected(false);        
     }
 }
