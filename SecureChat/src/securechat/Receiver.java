@@ -28,7 +28,7 @@ public class Receiver extends MessagingThread implements Runnable {
     
     @Override
     public void run(){
-        System.out.println("Receiver.run()");
+        System.out.println("RECEIVER STARTED: "+hostName+":"+port);
         try(
             ServerSocket ss = new ServerSocket(port);
             Socket s = ss.accept();
