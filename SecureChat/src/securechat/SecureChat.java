@@ -22,10 +22,13 @@ import java.util.concurrent.*;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.*;
+import javafx.event.EventHandler;
 import javafx.geometry.*;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert.*;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import securechat.frontend.MessageEntry;
@@ -107,6 +110,10 @@ public class SecureChat extends Application {
         connectToField.setId("usernameHostInput");
         connectToField.setPromptText("username@host"); 
         messageArea.setPromptText("Write your message here...");
+        messageArea.setOnKeyPressed((KeyEvent keyEvent) -> {
+            if (keyEvent.getCode() == KeyCode.ENTER)
+                handleMessageSend();
+        });
     }
     
     private void handleRequestAnswer() {
@@ -216,6 +223,7 @@ public class SecureChat extends Application {
         disconnectButton.disableProperty().bind(SharedState.getInstance().disconnectBinding);        
         connectButton.disableProperty().bind(SharedState.getInstance().connectBinding.or(connectToField.textProperty().isEmpty()));        
         acceptButton.disableProperty().bind(SharedState.getInstance().acceptBinding);
+        messageArea.disableProperty().bind(SharedState.getInstance().sendBinding);
         Thread.setDefaultUncaughtExceptionHandler(SecureChat::dummy);
         configureTextFields();
         setOnSendButtonClickHandler();

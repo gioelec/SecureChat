@@ -17,6 +17,7 @@ public class Sender extends MessagingThread implements Runnable {
         try {
             sRef.close();
         } catch(Exception e) {};
+        queue = null;
     }
     public void run(){
         String msg;
@@ -40,7 +41,9 @@ public class Sender extends MessagingThread implements Runnable {
         } catch (Exception ex) {
             System.out.println("SENDER STOPPED---sender");
             System.out.println("SENDER EXCEPTION -- "+ex.getMessage());
+            queue = null;
         }   
+        queue = null;
         SharedState.getInstance().setConnected(false);
     }
 }
