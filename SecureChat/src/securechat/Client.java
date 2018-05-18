@@ -22,7 +22,7 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
     private String recipient;
     private Socket sRef;
 
-    public Client(String hostName, int remotePort,int localPort, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate,String recipient,ArrayList<Certificate> crl){
+    public Client(String hostName, int remotePort,int localPort, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate,String recipient,X509CRL crl){
         super(myKey,issuer, myCertificate, CACertificate,crl);
         this.remotePort = remotePort;
         this.hostName = hostName;
@@ -42,7 +42,7 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
             ){
                 sRef=s;
                 System.out.println("SENDING REQUEST---client");
-                oout.writeObject("<REQUEST>"+issuer+"</REQUEST>");
+                oout.writeObject("<Req>"+issuer+"</Req>");
                 System.out.println("REQUEST SENT");
                 otherCertificate = (Certificate)oin.readObject();
                 System.out.println("CERTIFICATE RECEIVED---client");
@@ -75,8 +75,8 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
         this.req = Request.fromEncryptedRequest((byte[]) obj.readObject(),myKey); //first we read the length we expect LBA||nb||S(sb,LBA||nb)
         this.authKey = req.getSecretKey();
         System.out.println((crl == null));
-        System.out.println((crl.contains(req.getCertificate())));
-        return (req.verify(CACertificate, recipient)&& (crl==null || !crl.contains(req.getCertificate()))); 
+        System.out.println((crl.isRevoked(req.getCertificate())));
+        return (req.verify(CACertificate, recipient)&& (crl==null || !crl.isRevoked(req.getCertificate()))); 
     }
     private Request generateRequest() throws CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, SignatureException{
         this.symKey = CryptoManager.generateAES256RandomSecretKey();

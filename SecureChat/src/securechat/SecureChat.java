@@ -14,6 +14,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.*;
+import java.time.format.SignStyle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -47,7 +48,8 @@ public class SecureChat extends Application {
     private final Button sendButton = new Button("SEND");
     private final Properties properties = new Properties();
     private Stage appStage;
-    private ArrayList<Certificate> certificateRevocationList = new ArrayList<>();
+    //private ArrayList<Certificate> certificateRevocationList = new ArrayList<>();
+    private X509CRL certificateRevocationList;
     private PrivateKey pk;
     private Certificate myCertificate;
     private String myUsername;
@@ -182,7 +184,7 @@ public class SecureChat extends Application {
     }
     
     private void loadCRL(){
-        try{
+        /*try{
             Registry registry = LocateRegistry.getRegistry("localhost",9999);
             TrustedPartyInterface stub = (TrustedPartyInterface) registry.lookup("TrustedPartyInterface");
             byte[] nonce = new byte[4];            
@@ -210,7 +212,30 @@ public class SecureChat extends Application {
             }
         } catch (Exception ex) {
             System.out.println("TTP NOT ONLINE");
-        }
+        }*/
+        try {
+            Registry registry = LocateRegistry.getRegistry("localhost",9999);
+            TrustedPartyInterface stub = (TrustedPartyInterface) registry.lookup("TrustedPartyInterface");
+            byte[] nonce = new byte[4];            
+            (new SecureRandom()).nextBytes(nonce);
+            byte[] nonceCrlBytesWithSignature = stub.getCRL(nonce);    
+            int signatureLength = MessageBuilder.toInt(MessageBuilder.extractFirstBytes(nonceCrlBytesWithSignature, 4));
+            byte[] signature = MessageBuilder.extractRangeBytes(nonceCrlBytesWithSignature, 4, 4+signatureLength);
+            byte[] noncedCrl = MessageBuilder.extractLastBytes(nonceCrlBytesWithSignature, nonceCrlBytesWithSignature.length-(4+signatureLength));
+            byte[] receivedNonce = MessageBuilder.extractLastBytes(nonceCrlBytesWithSignature, 4);
+            byte[] crl = MessageBuilder.extractFirstBytes(noncedCrl, noncedCrl.length-4);
+            System.out.println(new String(crl));
+            System.out.println("SENDED NONCE: "+MessageBuilder.toInt(nonce));
+            System.out.println("RECEIVED NONCE: "+MessageBuilder.toInt(receivedNonce));
+            if(MessageBuilder.toInt(nonce) != MessageBuilder.toInt(receivedNonce)) {System.out.println("DIFFERENT NONCE RECEIVED"); System.exit(-1);}  
+            if(!SignatureManager.verify(noncedCrl, signature, "SHA256withRSA", authorityCertificate)) {System.out.println("SIGNATURE NOT VERIFIED"); System.exit(-1);}
+            InputStream is = new ByteArrayInputStream(crl);
+            CertificateFactory cf = CertificateFactory.getInstance(("X.509"));
+            certificateRevocationList = (X509CRL) cf.generateCRL(is);
+            try {
+                certificateRevocationList.verify(authorityCertificate.getPublicKey());
+            } catch(Exception e) {System.out.println("CRL NOT VERIFIED"); System.exit(-1);}
+        } catch(Exception e) {e.printStackTrace();}
     }
     
     private static void dummy(Thread t, Throwable e) {
@@ -240,8 +265,7 @@ public class SecureChat extends Application {
         appStage = primaryStage;
         scene.getStylesheets().add("file:./style.css");
         loadCryptoSpecs();
-        loadCRL();
-        System.out.println("Certificates in CRL:"+certificateRevocationList.size());
+        loadCRL();        
         System.out.println("Protocol listener started...");
         protocolServerRunnable = new Server(listeningPort,pk,myUsername,myCertificate,authorityCertificate,myL,sendBuffer,certificateRevocationList);
         protocolServerThread = new Thread(protocolServerRunnable);
@@ -279,7 +303,7 @@ public class SecureChat extends Application {
             error.setContentText("Message: "+e.getMessage());
             error.showAndWait().filter(response -> response == ButtonType.OK);
             e.printStackTrace();
-            System.exit(-1);
+            //System.exit(-1);
         }
     }
 

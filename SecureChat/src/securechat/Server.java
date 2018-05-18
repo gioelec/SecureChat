@@ -22,6 +22,7 @@ import javax.crypto.NoSuchPaddingException;
 import cryptoutils.cipherutils.CryptoManager;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.security.cert.X509CRL;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
@@ -42,7 +43,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
     private Thread senderThread = null;
     private ServerSocket ssRef = null;
     
-    public Server(int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate, ObservableList<Message> messageList, BlockingQueue<String> sendBuffer,ArrayList<Certificate> crl){
+    public Server(int port, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate, ObservableList<Message> messageList, BlockingQueue<String> sendBuffer,X509CRL crl){
         super(myKey,issuer, myCertificate, CACertificate,crl);
         this.port = port;
         System.out.println(messageList==null);
@@ -148,8 +149,8 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
         this.req = Request.fromEncryptedRequest((byte []) obj.readObject(),myKey); //first we read the length we expect LBA||nb||S(sb,LBA||nb)
         this.symKey = req.getSecretKey();
         System.out.println((crl == null));
-        System.out.println((crl.contains(req.getCertificate())));        
-        return (req.verify(CACertificate, null) && (crl == null || !crl.contains(req.getCertificate()))); 
+        System.out.println((crl.isRevoked(req.getCertificate())));        
+        return (req.verify(CACertificate, null) && (crl == null || !crl.isRevoked(req.getCertificate()))); 
     }
     
     private Request generateRequest() throws CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, SignatureException{

@@ -8,6 +8,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
+import java.security.cert.X509CRL;
 import java.util.ArrayList;
 
 public class HandshakeProtocol {
@@ -19,9 +20,9 @@ public class HandshakeProtocol {
     protected Certificate CACertificate;
     protected long myNonce;
     protected boolean success = false;
-    protected ArrayList<Certificate> crl;
+    protected X509CRL crl;
 
-    public HandshakeProtocol(PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate,ArrayList<Certificate> crl){
+    public HandshakeProtocol(PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate,X509CRL crl){
         this.myKey = myKey;
         this.issuer = issuer;
         this.myCertificate = myCertificate;

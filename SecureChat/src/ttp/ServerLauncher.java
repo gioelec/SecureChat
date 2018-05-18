@@ -13,7 +13,7 @@ public class ServerLauncher {
     public static void main(String[] args) {
         try {
             System.setProperty("java.rmi.server.hostname", "0.0.0.0");            
-            TrustedPartyRMIServer srv = new TrustedPartyRMIServer("auhtority.cer", "key.pem");
+            TrustedPartyRMIServer srv = new TrustedPartyRMIServer("auhtority.cer", "key.pem","crl.pem");
             srv.addToCRL(CertificateManager.readCertFromFile("gioele.crt"));
             TrustedPartyInterface stub = (TrustedPartyInterface) UnicastRemoteObject.exportObject(srv, 9999);
             Registry registry = LocateRegistry.createRegistry(9999);
