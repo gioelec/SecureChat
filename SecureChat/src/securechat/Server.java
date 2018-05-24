@@ -149,7 +149,8 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
         this.req = Request.fromEncryptedRequest((byte []) obj.readObject(),myKey); //first we read the length we expect LBA||nb||S(sb,LBA||nb)
         this.symKey = req.getSecretKey();
         System.out.println((crl == null));
-        System.out.println((crl.isRevoked(req.getCertificate())));        
+        if(crl != null)
+            System.out.println((crl.isRevoked(req.getCertificate())));        
         return (req.verify(CACertificate, null) && (crl == null || !crl.isRevoked(req.getCertificate()))); 
     }
     

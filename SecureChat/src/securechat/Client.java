@@ -75,7 +75,8 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
         this.req = Request.fromEncryptedRequest((byte[]) obj.readObject(),myKey); //first we read the length we expect LBA||nb||S(sb,LBA||nb)
         this.authKey = req.getSecretKey();
         System.out.println((crl == null));
-        System.out.println((crl.isRevoked(req.getCertificate())));
+        if(crl != null)
+            System.out.println((crl.isRevoked(req.getCertificate())));
         return (req.verify(CACertificate, recipient)&& (crl==null || !crl.isRevoked(req.getCertificate()))); 
     }
     private Request generateRequest() throws CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, SignatureException{
