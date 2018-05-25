@@ -256,7 +256,7 @@ public class SecureChat extends Application {
         HBox connectControls = buildConnectControls();
         configureListView();
         GridPane root = buildSceneGrid(connectControls);
-        Scene scene = new Scene(root, 280, 530);
+        Scene scene = new Scene(root, 380, 550);
         primaryStage.setTitle("SecureChat - Disconnected");
         primaryStage.setResizable(false);
         primaryStage.setScene(scene);
