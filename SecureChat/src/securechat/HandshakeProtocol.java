@@ -29,6 +29,13 @@ public class HandshakeProtocol {
         this.CACertificate = CACertificate;
         this.crl = crl;
     }
+    /**
+     * Receives the challenge and verifies the timestamp, also returns the communication port for the other host
+     * 
+     * 
+     * @param oin
+     * @return 
+     */
     protected Object[] receiveChallenge(ObjectInputStream oin){
         byte [] decryptedMsg =  SecureEndpoint.secureReceive(oin, symKey, authKey);  //data,kab,mab
         Object[] returns = new Object[2];   //0 nonce verified or not, 1 port needed for the server
@@ -46,6 +53,15 @@ public class HandshakeProtocol {
             returns[0] = false;
         return returns;
     }
+    /**
+     * Sends the challenge composed of timestamp|port to the other user, returns true if the send succeeds
+     * @param oout
+     * @param receivedNonce
+     * @param port
+     * @return
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeyException 
+     */
     protected boolean sendChallenge(ObjectOutputStream oout,long receivedNonce,int port) throws NoSuchAlgorithmException, InvalidKeyException{
         System.out.println("PORT TO SEND: "+port);
         byte[] myNonce = MessageBuilder.toByteArray(receivedNonce);
@@ -62,8 +78,7 @@ public class HandshakeProtocol {
     }
     public byte[] getAuthKey(){
         return authKey;
-    }
-    
+    }    
     public boolean getHandshakeResult() {
         return success;
     }

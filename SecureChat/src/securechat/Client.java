@@ -70,7 +70,20 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
     
     public Certificate getCertificate() {
         return otherCertificate;
-    }  
+    }
+    /**
+     * Gets the server request, sets the authentication key and verifies if the Certificate in the request is revoked or not 
+     * @param obj
+     * @return
+     * @throws IOException
+     * @throws ClassNotFoundException
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchPaddingException
+     * @throws InvalidKeyException
+     * @throws IllegalBlockSizeException
+     * @throws BadPaddingException
+     * @throws CertificateException 
+     */
     private boolean getRequest(ObjectInputStream obj) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, CertificateException{
         this.req = Request.fromEncryptedRequest((byte[]) obj.readObject(),myKey); //first we read the length we expect LBA||nb||S(sb,LBA||nb)
         this.authKey = req.getSecretKey();
@@ -79,6 +92,14 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
             System.out.println((crl.isRevoked(req.getCertificate())));
         return (req.verify(CACertificate, recipient)&& (crl==null || !crl.isRevoked(req.getCertificate()))); 
     }
+    /**
+     * Generates the symmetric key, adds the timestamp and signs the request with his private key
+     * @return
+     * @throws CertificateEncodingException
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeyException
+     * @throws SignatureException 
+     */
     private Request generateRequest() throws CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, SignatureException{
         this.symKey = CryptoManager.generateAES256RandomSecretKey();
         Request req = new Request(issuer,recipient,myCertificate,symKey); 
