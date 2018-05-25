@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package securechat;
 
 import java.util.concurrent.TimeUnit;
@@ -13,10 +8,6 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleBooleanProperty;
 
-/**
- *
- * @author Federico Rossi
- */
 public class SharedState {
     private boolean requestResponse = false;
     private boolean responseAvailable = false;
@@ -36,11 +27,18 @@ public class SharedState {
     
     private SharedState() {}
     
+    /**
+     * Singleton pattern
+     * @return 
+     */
     public static SharedState getInstance() {
         if(_instance == null) _instance = new SharedState();
         return _instance;
     }
-    
+    /**
+     * Waits for a response for the connection by the other user, to avoid clock synch problems we give to the user(server) less available time
+     * @return false if the time runned out or the user gave a negative answer, true if the connection was accepted
+     */
     public boolean waitForResponse() {
         requestLock.lock();
         try {
@@ -61,6 +59,10 @@ public class SharedState {
         finally {requestLock.unlock();}
         return requestResponse;
     }
+    /**
+     * Blocking function that waits for the protocol to end
+     * @return 
+     */
     
     public boolean waitProtocol() {
         hpStatusLock.lock();
@@ -70,20 +72,25 @@ public class SharedState {
         finally {hpStatusLock.unlock();}
         return handshakeProtocolTerminationStatus;
     }
-    
+    /**
+     * Signals the end of the protocol
+     * @param result 
+     */
     public void protocolDone(boolean result) {
         hpStatusLock.lock();
         try {
             setPendingRequest(false);
             handshakeProtocolTerminated=true;
             handshakeProtocolTerminationStatus=result;
-            System.out.println("Signalling...");
+            System.out.println("Signaling...");
             handshakeStatusAvailable.signal();
         } catch(Exception e) {e.printStackTrace();}
         finally{hpStatusLock.unlock();}
     }
-    
-    
+   /**
+    * Sets the response and signals its availability
+    * @param response 
+    */    
     public void setResponse(boolean response) {
         requestLock.lock();
         try {

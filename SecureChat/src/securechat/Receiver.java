@@ -1,7 +1,6 @@
 package securechat;
 
 import cryptoutils.communication.SecureEndpoint;
-import cryptoutils.messagebuilder.MessageBuilder;
 import java.io.*;
 import java.net.*;
 import java.util.Date;
@@ -18,7 +17,7 @@ public class Receiver extends MessagingThread implements Runnable {
         this.messageList = messageList;
         this.sender = sender;
     }
-    
+
     public void stopReceiver() {
         try {
             sRef.close();

@@ -13,12 +13,14 @@ public class Sender extends MessagingThread implements Runnable {
         super(authKey, symKey, port, hostName);
         this.queue = queue;
     }
+    
     public void stopSender() {
         try {
             sRef.close();
         } catch(Exception e) {};
         queue = null;
     }
+    
     public void run(){
         String msg;
         System.out.println("SENDER STARTED "+hostName+":"+port);

@@ -21,13 +21,9 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import cryptoutils.cipherutils.CryptoManager;
 import java.net.InetAddress;
-import java.net.SocketException;
 import java.security.cert.X509CRL;
-import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import javafx.collections.ObservableList;
 import securechat.model.Message;
 
@@ -145,6 +141,19 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
             } catch(Exception e) {}
         }
     }
+    /**
+     * Gets the Client request, sets the symmetric key with the received value and verifies if the Certificate in the request is revoked or not 
+     * @param obj
+     * @return
+     * @throws IOException
+     * @throws ClassNotFoundException
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchPaddingException
+     * @throws InvalidKeyException
+     * @throws IllegalBlockSizeException
+     * @throws BadPaddingException
+     * @throws CertificateException 
+     */
     private boolean getRequest(ObjectInputStream obj) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, CertificateException{
         this.req = Request.fromEncryptedRequest((byte []) obj.readObject(),myKey); //first we read the length we expect LBA||nb||S(sb,LBA||nb)
         this.symKey = req.getSecretKey();
@@ -153,7 +162,14 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
             System.out.println((crl.isRevoked(req.getCertificate())));        
         return (req.verify(CACertificate, null) && (crl == null || !crl.isRevoked(req.getCertificate()))); 
     }
-    
+    /**
+     * Generates the authentication key, adds the timestamp and signs the request with his private key
+     * @return
+     * @throws CertificateEncodingException
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeyException
+     * @throws SignatureException 
+     */
     private Request generateRequest() throws CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, SignatureException{
         this.authKey = CryptoManager.generateAES256RandomSecretKey();
         Request req = new Request(issuer,this.req.getIssuer(),myCertificate,authKey);
