@@ -259,7 +259,6 @@ public class SecureChat extends Application {
         primaryStage.show();
         root.requestFocus();
         appStage = primaryStage;
-        scene.getStylesheets().add("file:./style.css");
         loadCryptoSpecs();
         loadCRL();        
         System.out.println("Protocol listener started...");
