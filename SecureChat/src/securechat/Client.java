@@ -62,6 +62,7 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
                 success = true;
                 SharedState.getInstance().setConnected(true);
             }catch(Exception e){
+                e.printStackTrace();
                 System.out.println("EXCEPTION---client");
                 SharedState.getInstance().setConnected(false);
             }
