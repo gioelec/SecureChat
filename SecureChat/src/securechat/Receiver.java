@@ -8,8 +8,8 @@ import javafx.collections.ObservableList;
 import securechat.model.Message;
 
 public class Receiver extends MessagingThread implements Runnable {
-    private ObservableList<Message> messageList;
-    private String sender;
+    private final ObservableList<Message> messageList;
+    private final String sender;
     private ServerSocket ssRef;
     private Socket sRef;
     public Receiver(ObservableList<Message> messageList,String sender,byte[] authKey, byte[] symKey, int port, String hostName) {

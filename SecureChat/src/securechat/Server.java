@@ -32,8 +32,8 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
     private final int port;
     private Request req;
     private Request myReq;
-    private BlockingQueue<String> sendBuffer;
-    private ObservableList<Message> messageList;
+    private final BlockingQueue<String> sendBuffer;
+    private final ObservableList<Message> messageList;
     private int clientPort;
     private Receiver receiverRunnable = null;
     private Thread senderThread = null;
@@ -70,7 +70,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 ObjectOutputStream oout = new ObjectOutputStream(out);
             ){
                 ssRef = ss;
-                System.out.println("SERVER WAITING FOR REQUEST");///////////////////////////////////////////////
+                System.out.println("SERVER WAITING FOR REQUEST");
                 String requestHeader = (String)oin.readObject();          
                 System.out.println("RECEIVED REQUEST");
                 try {

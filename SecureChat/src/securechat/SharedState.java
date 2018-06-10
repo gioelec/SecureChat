@@ -1,22 +1,19 @@
 package securechat;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import javafx.beans.binding.Bindings;
-import javafx.beans.binding.BooleanBinding;
+import java.util.concurrent.locks.*;
+import javafx.beans.binding.*;
 import javafx.beans.property.SimpleBooleanProperty;
 
 public class SharedState {
     private boolean requestResponse = false;
     private boolean responseAvailable = false;
-    private Lock requestLock = new ReentrantLock();
-    private Condition responseAvailableCondition = requestLock.newCondition();
+    private final Lock requestLock = new ReentrantLock();
+    private final Condition responseAvailableCondition = requestLock.newCondition();
     private boolean handshakeProtocolTerminated = false;
     private boolean handshakeProtocolTerminationStatus = false;
-    private Lock hpStatusLock = new ReentrantLock();
-    private Condition handshakeStatusAvailable = hpStatusLock.newCondition();
+    private final Lock hpStatusLock = new ReentrantLock();
+    private final Condition handshakeStatusAvailable = hpStatusLock.newCondition();
     private static SharedState _instance;
     private SimpleBooleanProperty pendingRequest = new SimpleBooleanProperty(false);
     private SimpleBooleanProperty isConnected = new SimpleBooleanProperty(false);

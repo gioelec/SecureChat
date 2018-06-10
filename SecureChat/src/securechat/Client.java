@@ -4,22 +4,21 @@ package securechat;
 import java.io.*;
 import java.net.Socket;
 import cryptoutils.communication.Request;
-import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.*;
+import java.security.*;
 import javax.crypto.*;
 import cryptoutils.cipherutils.CryptoManager;
-import java.util.ArrayList;
 
 
 public class Client extends HandshakeProtocol implements Runnable{ //Represents Alice in the protocol specifics
-    private int remotePort;
-    private int localPort;
+    private final int remotePort;
+    private final int localPort;
     private Request req;
     private Request myReq;
-    private String hostName;
+    private final String hostName;
     private Certificate otherCertificate;
-    private String recipient;
+    private final String recipient;
     private Socket sRef;
 
     public Client(String hostName, int remotePort,int localPort, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate,String recipient,X509CRL crl){

@@ -2,14 +2,12 @@ package securechat;
 
 import cryptoutils.communication.SecureEndpoint;
 import cryptoutils.messagebuilder.MessageBuilder;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509CRL;
-import java.util.ArrayList;
 
 public class HandshakeProtocol {
     protected PrivateKey myKey;

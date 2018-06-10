@@ -1,21 +1,15 @@
 package securechat;
 
-import cryptoutils.cipherutils.CertificateManager;
-import cryptoutils.cipherutils.CryptoManager;
-import cryptoutils.cipherutils.SignatureManager;
+import cryptoutils.cipherutils.*;
 import cryptoutils.communication.TrustedPartyInterface;
 import cryptoutils.messagebuilder.MessageBuilder;
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
+import java.io.*;
+import java.rmi.registry.*;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.*;
-import java.util.Date;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.*;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -39,12 +33,11 @@ public class SecureChat extends Application {
     private final Button disconnectButton = new Button("DISCONNECT");
     private final ObservableList<Message> myL = FXCollections.observableArrayList();
     private final ListView<Message> l = new ListView<>(myL);
-    private static BlockingQueue<String> sendBuffer = new LinkedBlockingQueue<>();
+    private static final BlockingQueue<String> sendBuffer = new LinkedBlockingQueue<>();
     private final TextField messageArea = new TextField();
     private final Button sendButton = new Button("SEND");
     private final Properties properties = new Properties();
     private Stage appStage;
-    //private ArrayList<Certificate> certificateRevocationList = new ArrayList<>();
     private X509CRL certificateRevocationList;
     private PrivateKey pk;
     private Certificate myCertificate;
@@ -83,8 +76,7 @@ public class SecureChat extends Application {
         try {
             connectThread.join(10000);
             if(!connectThreadRunnable.getHandshakeResult()) {
-                connectThread.interrupt();   ///delete?
-                //connectThreadRunnable.stopClient();
+                connectThread.interrupt();  
                 myL.add(new Message(username,new Date(),"Connection error",2));
                 return;
             }
@@ -180,35 +172,6 @@ public class SecureChat extends Application {
     }
     
     private void loadCRL(){
-        /*try{
-            Registry registry = LocateRegistry.getRegistry("localhost",9999);
-            TrustedPartyInterface stub = (TrustedPartyInterface) registry.lookup("TrustedPartyInterface");
-            byte[] nonce = new byte[4];            
-            (new SecureRandom()).nextBytes(nonce);
-            byte[] crl = stub.getCRL(nonce);
-            if(crl == null) return;
-            int signatureLength = MessageBuilder.toInt(MessageBuilder.extractFirstBytes(crl, 4)); 
-            byte[] signature = MessageBuilder.extractRangeBytes(crl, 4,4+signatureLength);
-            byte[] recvNonce = MessageBuilder.extractRangeBytes(crl, 4+signatureLength,4+4+signatureLength); 
-            byte[] nonceEncodedCrl = MessageBuilder.extractLastBytes(crl,crl.length-(4+signatureLength));
-            if(!(Arrays.equals(nonce, recvNonce))||!SignatureManager.verify(nonceEncodedCrl, signature, "SHA256withRSA", authorityCertificate)) {
-                System.out.println("UNABLE TO VERIFY CRL SIGNATURE"); System.exit(-1);
-            }
-            int size; int ptr=0;
-            byte[] encodedCrl = MessageBuilder.extractLastBytes(nonceEncodedCrl, nonceEncodedCrl.length-4);
-            for(;ptr < encodedCrl.length;) {
-                size = MessageBuilder.toInt(MessageBuilder.extractRangeBytes(encodedCrl, ptr, ptr+4));
-                ptr+=4;
-                byte[] certData = MessageBuilder.extractRangeBytes(encodedCrl, ptr, ptr+size);
-                ptr+=size;
-                CertificateFactory certFactory =  CertificateFactory.getInstance("X.509");
-                InputStream is = new ByteArrayInputStream(certData);
-                Certificate certificate = certFactory.generateCertificate(is);
-                certificateRevocationList.add(certificate);
-            }
-        } catch (Exception ex) {
-            System.out.println("TTP NOT ONLINE");
-        }*/
         try {
             Registry registry = LocateRegistry.getRegistry("localhost",9999);
             TrustedPartyInterface stub = (TrustedPartyInterface) registry.lookup("TrustedPartyInterface");

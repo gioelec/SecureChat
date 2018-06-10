@@ -1,8 +1,5 @@
 package securechat;
 
-import java.security.cert.Certificate;
-import java.util.ArrayList;
-
 public class MessagingThread {
     protected byte[] symKey;
     protected byte[] authKey;

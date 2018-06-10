@@ -1,23 +1,17 @@
 package securechat.frontend;
 
 import javafx.geometry.Insets;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.text.Text;
+import javafx.scene.text.*;
 import securechat.model.Message;
 
 public class MessageEntry extends ListCell<Message> {
-    private VBox wrapper = new VBox();
-    private Label user = new Label();
-    private Label date = new Label();
-    private Text content = new Text();
+    private final VBox wrapper = new VBox();
+    private final Label user = new Label();
+    private final Label date = new Label();
+    private final Text content = new Text();
     
     public MessageEntry() {
         user.setFont(Font.font("Verdana", FontWeight.BOLD, 12));      
