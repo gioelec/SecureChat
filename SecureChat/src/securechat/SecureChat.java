@@ -244,6 +244,7 @@ public class SecureChat extends Application {
             myCertificate = CertificateManager.readCertFromFile(properties.getProperty("myCertPath"));
             if(myCertificate == null) throw new Exception("Certificate not found");
             Certificate authCert = CertificateManager.readCertFromFile(properties.getProperty("authcertpath"));
+            if(!CertificateManager.verifyCertificate((X509Certificate)authCert, authCert)) throw new Exception("Invalid authority certificate");            
             if(!CertificateManager.verifyCertificate((X509Certificate)myCertificate, authCert)) throw new Exception("Invalid certificate");
             PrivateKey myPrivKey = CryptoManager.readRSAPrivateKeyFromPEMFile(properties.getProperty("privatekeypath"));
             PublicKey myPublicKey = myCertificate.getPublicKey(); 
@@ -261,7 +262,7 @@ public class SecureChat extends Application {
             error.setContentText("Message: "+e.getMessage());
             error.showAndWait().filter(response -> response == ButtonType.OK);
             e.printStackTrace();
-            //System.exit(-1);
+            System.exit(-1);
         }
     }
 

@@ -59,8 +59,6 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
             SharedState.getInstance().setConnected(false);            
             System.out.println("SERVER ISTANTIATED @ PORT: "+port);
             String requestIpAddress = null;
-            int requestPort = -1;
-            Object[] confReturn = null;
             try(
                 ServerSocket ss = new ServerSocket(port, 1, InetAddress.getByName("0.0.0.0"));
                 Socket s = ss.accept();
@@ -104,7 +102,6 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 sendChallenge(oout,req.getTimestamp().toEpochMilli(),-1);
                 success = true;
                 requestIpAddress = s.getInetAddress().getHostAddress();
-                requestPort = s.getPort();
             }catch(Exception e){
                 System.out.println("IN EXCEPTION SETTING PROTOCOLD DONE TO FALSE--server");
                 SharedState.getInstance().protocolDone(false);
@@ -112,6 +109,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 if(Thread.interrupted()) return;
                 continue;
             }
+            
             if(!success) continue;
             SharedState.getInstance().setConnected(true);
             System.out.println("PROTOCOL ENDED CORRECTLY WITH: "+requestIpAddress+":"+clientPort+" ----server");
@@ -136,7 +134,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                     sendBuffer.add("int");
                     senderThread.join();
                 }else
-                System.out.println("STOP IT IS ALREADY DEAD---server");
+                    System.out.println("STOP, IT IS ALREADY DEAD---server");
                 System.out.println("SENDER JOIN DONE---Server");
             } catch(Exception e) {}
         }

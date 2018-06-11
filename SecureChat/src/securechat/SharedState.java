@@ -46,7 +46,6 @@ public class SharedState {
                 responseAvailableCondition.await(remained,TimeUnit.MILLISECONDS);
                 remained = expires-System.currentTimeMillis();
                 if(remained<=0 && !responseAvailable){
-                    //protocolDone(false); graphical feedback to the user?
                     break;
                 }
             }

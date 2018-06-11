@@ -19,7 +19,6 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
     private final String hostName;
     private Certificate otherCertificate;
     private final String recipient;
-    private Socket sRef;
 
     public Client(String hostName, int remotePort,int localPort, PrivateKey myKey,String issuer, Certificate myCertificate,Certificate CACertificate,String recipient,X509CRL crl){
         super(myKey,issuer, myCertificate, CACertificate,crl);
@@ -39,16 +38,15 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
                 ObjectOutputStream oout = new ObjectOutputStream(out);
                 ObjectInputStream oin = new ObjectInputStream(in);
             ){
-                sRef=s;
                 System.out.println("SENDING REQUEST---client");
                 oout.writeObject("<Req>"+issuer+"</Req>");
                 System.out.println("REQUEST SENT");
                 otherCertificate = (Certificate)oin.readObject();
                 System.out.println("CERTIFICATE RECEIVED---client");
                 myReq = generateRequest();                
-                oout.writeObject(myReq.getEncrypted(otherCertificate.getPublicKey())); // THIS PUBLIC KEY MUST BE PROVIDED BY A CERTIICATE REQ OBJECT IS NULL
+                oout.writeObject(myReq.getEncrypted(otherCertificate.getPublicKey())); 
                 if(!getRequest(oin)){
-                    System.err.println("REQUEST CORRUPTED THE SIGNATURE IS NOT AUTHENTIC--client");//TODO in request verify
+                    System.err.println("REQUEST CORRUPTED THE SIGNATURE IS NOT AUTHENTIC--client");
                     return;
                 }
                 System.out.println("GOT REPLY -- Sending port "+localPort +"---client");                
@@ -65,7 +63,6 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
                 System.out.println("EXCEPTION---client");
                 SharedState.getInstance().setConnected(false);
             }
-        //}
     }
     
     public Certificate getCertificate() {
@@ -85,11 +82,8 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
      * @throws CertificateException 
      */
     private boolean getRequest(ObjectInputStream obj) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, CertificateException{
-        this.req = Request.fromEncryptedRequest((byte[]) obj.readObject(),myKey); //first we read the length we expect LBA||nb||S(sb,LBA||nb)
+        this.req = Request.fromEncryptedRequest((byte[]) obj.readObject(),myKey);
         this.authKey = req.getSecretKey();
-        System.out.println((crl == null));
-        if(crl != null)
-            System.out.println((crl.isRevoked(req.getCertificate())));
         return (req.verify(CACertificate, recipient)&& (crl==null || !crl.isRevoked(req.getCertificate()))); 
     }
     /**
@@ -107,7 +101,4 @@ public class Client extends HandshakeProtocol implements Runnable{ //Represents 
         req.sign(myKey);
         return req;
     }       
-    /*public void stopClient(){
-        try{sRef.close();}catch(Exception e){}
-    }*/
 }
