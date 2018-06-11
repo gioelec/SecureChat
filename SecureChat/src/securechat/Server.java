@@ -89,6 +89,7 @@ public class Server extends HandshakeProtocol implements Runnable{ //Represents 
                 oout.writeObject(myCertificate);
                 if(!getRequest(oin)){
                     System.err.println("REQUEST CORRUPTED OR NOT AUTHENTIC---server");
+                    SharedState.getInstance().protocolDone(false);
                     continue;
                 }
                 myReq = generateRequest();
