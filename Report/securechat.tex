@@ -1,0 +1,311 @@
+\documentclass[twocolumn]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{tikz}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{amssymb}
+\usetikzlibrary{arrows,shadows,calc}
+\usepackage{pgf-umlsd}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\newcommand{\believes}{\mid\equiv}
+\newcommand{\sees}{\triangleleft}
+\newcommand{\oncesaid}{\mid\sim}
+\newcommand{\controls}{\Rightarrow}
+\newcommand{\fresh}[1]{\text{\texttt{\#}}(#1)}
+\newcommand{\combine}[2]{{\langle #1 \rangle}_{#2}}
+\newcommand{\encrypt}[2]{{ \{ #1 \} }_{#2}}
+\newcommand{\sharekey}[1]{\xleftrightarrow{#1}}
+\newcommand{\pubkey}[1]{\xmapsto{#1}}
+\newcommand{\secret}[1]{\xleftrightharpoons{#1}}
+
+
+
+
+\title{Secure Chat application for personal communication}
+\author{Carignani G., Rossi F.}
+
+\begin{document}
+\maketitle
+\section{Protocol}
+
+\subsection{Enrollment procedure}
+\label{sec:cert}
+\paragraph{}If an user wants to join the system it must be certified by the TTP by sending a certificate signing request (CSR) to it, containing its personal information and contacts (in order to let the TTP correctly identifying the issuer). The overall enrollment process follows this scheme:
+\begin{enumerate}
+	\item An user generates a pair of private and public keys $s_U,p_U$
+	\item Then it generates a \textit{certificate signing request} (CSR) containing identity information; in particular this request will contain its nickname in the \texttt{CN} field, that will be used by other users to initiate chat session with him. This request will be sent to a \textit{trusted third party}.
+	\item Upon receiving the request, the TTP will firstly verify whether the CSR identity is confirmed and then will proceed to sign the CSR, sending back a certificate to the user. In particular, the TTP will check if the \texttt{CN} field is not already taken, to guarantee the uniqueness of the nickname system-wide.
+	\item At this point, with the signed certificate, the user has joined the system, identified by its nickname (or \texttt{CN}).
+\end{enumerate}
+See Figure \ref{fig:seq_csr} for the sequence diagram.
+\subsection{Key establishment}
+\label{sec:key_est}
+Suppose B(ob) wants to communicate with A(lice). As described in Figure \ref{fig:seq_dia}, he can ask her to send him her certificate, obtained as in Sub-section \ref{sec:cert}. Then he generates a random key $k_{AB}$ that will be used for symmetric encryption; he builds the following request message and sends it to A:
+\begin{equation}
+    m = L_{BA}||t_B||S(s_B,L_{BA}||t_B)
+\end{equation}
+Where:
+\begin{itemize}
+    \item $E$ is a public key encryption operation
+    \item $p_A$ is A public key
+    \item $L_{BA} = <"Bob","Alice",C_B,E(p_A,k_{AB})>$
+    \item $t_B$ is the timestamp associated to that message
+    \item $S$ is a digital signature operation
+    \item $s_B$ is B private key
+\end{itemize}
+\begin{figure}[H]
+	\centering
+    \begin{sequencediagram}
+	    \newinst{b}{Bob}
+	    \newinst[3]{a}{Alice}
+	    \mess{b}{"Alice"?}{a}
+	    \mess{a}{$C_A$}{b}
+	    \postlevel
+	    \mess{b}{$L_{BA}||t_B||S{(s_B,L_{BA}||t_B)}$}{a}	    
+	    \mess{a}{$L_{AB}||t_A||S{(s_A,L_{AB}||t_A)}$}{b}
+	    \postlevel
+	    \mess{a}{$E{(k_{AB},t_b||M{(m_{AB},t_b)})}$}{b}
+	    \mess{b}{$E{(k_{AB},t_a||M{(m_{AB},t_a)})}$}{a}
+    \end{sequencediagram} 
+    \caption{Key establishment protocol}
+    \label{fig:seq_dia}
+\end{figure}
+
+Upon receiving that, A builds its own request message, generating a random key $m_{AB}$ that will be used in MACs, and sends it to B:
+\begin{equation}
+    m = L_{AB}||t_A||S(s_A,L_{AB}||t_A)
+\end{equation}
+Where (same fields as before are not reported):
+\begin{itemize}
+    \item $p_B$ is B public key
+    \item $L_{AB} = <"Alice","Bob",C_A,E(p_B,m_{AB})>$
+    \item $t_A$ is the timestamp associated to that message
+    \item $s_A$ is A private key
+\end{itemize}
+Now, the keys $k_{AB}$ and $m_{AB}$ have been shared by the two parties.
+Then, B sends back to A its challenge, encrypting it by means of shared key and adding the message authentication code:
+\begin{equation}
+    m_{cb}= E(k_{AB},t_A||M(m_{AB},t_A))
+\end{equation}
+Where $E$ is a symmetric encryption operation, $M$ is a MAC operation and $t_A$ is the timestamp B has received before.
+Same operation is done by A:
+\begin{equation}
+    m_{ca}= E(k_{AB},t_B||M(m_{AB},t_B))
+\end{equation}
+At this point, A and B check whether the received challenges are equal to the timestamps saved at the beginning, to be guaranteed of both freshness and correctness of the algorithm.
+\subsection{Message exchanging}
+Once a session key has been established between the two parties as in Sub-section \ref{sec:key_est} each message exchanged by the two parties will be built as follow:
+\begin{equation}
+    A \rightarrow B: E(k_{AB},m||t||M(m_{AB},m||t))
+\end{equation}
+\begin{equation}
+    B \rightarrow A: E(k_{AB},m||t||M(m_{AB},m||t))
+\end{equation}
+Where $t$ is a timestamp used to avoid replay attacks. Obviously we must consider a certain tolerance that takes into account the latency experienced in the network and clock misalignment.
+\begin{figure}
+    \centering
+    \begin{sequencediagram}
+	    \newinst{a}{Alice}
+	    \newinst[3]{s}{TTP}
+	    \mess{a}{nonce}{s}
+	    \postlevel
+	    \mess{s}{ $nonce||C_{1},C_{2},C_{3},...,C_{z}||S{(s_T,...)}$}{a}
+    \end{sequencediagram} 
+    \caption{CRL request}
+    \label{fig:seq_crl}
+\end{figure}
+
+\subsection{Certificate revocation list (CRL)} Periodically the TTP will be able to provide a certification revocation list to users, that will be used to reject requests from potentially compromised users. The CRL will contain a list of certificate that corresponds to potentially compromised private keys. Upon receiving a request, if the contained certificate belongs to the CRL set, the request will be discarded.
+
+The procedure followed for this step is shown in Figure \ref{fig:seq_crl}
+\section{Security proofs}
+The most critical aspect of security in this protocol is the \textit{key reinstallation} attack; in this attack an adversary able to eavesdrop the session key $k_{AB}$, attempts to impersonate one of the two parts, by means of \textit{protocol spoofing}, and induce the other party to use the eavesdropped key.
+
+This can be achieved by means of two possible attacks:
+\begin{itemize}
+	\item \textit{record and replay} the whole key-exchange phase
+	\item \textit{request forging} with the eavesdropped key
+\end{itemize}
+\subsection{Record and replay attack}
+Suppose that T(rudy) has managed in some way to obtain the key $k_{AB}$ and tries to replay the left part (referring to \ref{fig:seq_dia}) of the key exchange protocol.
+Upon receiving the replayed request, A(lice) will check the timestamp to verify the freshness of the request. 
+
+Since T has simply replayed previous request, the timestamp check will fail and Alice will reject the request. Note that T may change the timestamp to make the request fresh; 
+this type of attack falls back into the following category.
+\subsection{Request forging attack}
+Now, suppose that T(rudy) intercepts a legit request, changes \[L_{BA} = <B,A,C_B,E(p_A,k^{new}_{AB})>\] 
+with \[L_{BA}' = <B,A,C_B,E(p_A,k^{old}_{AB})>\] 
+and then forwards the
+request to A(lice).
+
+The timestamp check will surely pass, since the request is actually fresh, but when A checks for the request signature to match the computed one, she will notice the
+corruption, thus rejecting the request.
+
+Note that this property holds if.f the long term secret of B(ob) is not compromised, otherwise T could recompute the correct signature and substitute it into the request.
+\begin{figure}
+    \centering
+    \begin{sequencediagram}
+	    \newinst{a}{Alice}
+	    \newinst[3]{s}{TTP}
+	    \mess{a}{CSR}{s}
+	    \postlevel
+	    \mess{s}{$C_{A}$}{a}
+    \end{sequencediagram} 
+    \caption{Certificate signing}
+    \label{fig:seq_csr}
+\end{figure}
+\newpage
+\section{BAN logic validation} 
+
+%%HYPOTHESES%%%%
+\subsection{Hypotheses} % (fold)
+\setcounter{equation}{0}
+\renewcommand{\theequation}{H.\arabic{equation}}
+\subsubsection{Key block}
+\begin{equation}\label{hp:H.1}
+A \believes \pubkey{k_t}T
+\end{equation}
+\begin{equation}\label{hp:H.2}
+B \believes \pubkey{k_t}T
+\end{equation}
+\begin{equation}\label{hp:H.3}
+B \believes A\sharekey{k_{ab}}B
+\end{equation}
+\begin{equation}\label{hp:H.4}
+A \believes A\sharekey{m_{ab}}B
+\end{equation}
+\subsubsection{Freshness block} For this part, we must assume that the clock synchronization is part of the \textit{trusted computing base} of the systems upon which the protocol will run.
+\begin{equation}\label{hp:H.5}
+A,B \believes \fresh{t_b}
+\end{equation}
+\begin{equation}\label{hp:H.6}
+A,B \believes \fresh{t_a}
+\end{equation}
+\begin{equation}\label{hp:H.6s}
+A \believes \fresh{C_b}
+\end{equation}
+\begin{equation}\label{hp:H.6s}
+B \believes \fresh{C_b}
+\end{equation}
+\begin{equation}\label{hp:H.6s}
+A,B \believes \fresh{C_t}
+\end{equation}
+\textbf{NOTE: Assuming that certificates are always fresh is only a BAN-related assumption to support validation. In practice, during implementation we \underline{MUST}}:
+\begin{itemize}
+	\item Check whether certificate is expired or not (for $C_a,C_b,C_t$)
+	\item Check whether certificate belongs to a \textit{CRL} (for $C_a,C_b$) 
+\end{itemize}
+\subsubsection{Trust block}
+\begin{equation}\label{hp:H.7}
+A \believes T \controls  \pubkey{k_b} B
+\end{equation}
+\begin{equation}\label{hp:H.8}
+B \believes T \controls  \pubkey{k_a} A
+\end{equation}
+\begin{equation} \label{hp:H.9}
+A \believes B \controls A \sharekey{k_{ab}} B
+\end{equation}
+\begin{equation}\label{hp:H.10}
+ B \believes A \controls A \sharekey{m_{ab}} B
+\end{equation}
+
+%%%OBJECTIVES%%%%
+\subsection {Objectives}
+\setcounter{equation}{0}
+\renewcommand{\theequation}{O.\arabic{equation}}
+\begin{equation} \label{Ob:O.1} %5
+A \believes \fresh{A \sharekey{k_{ab}} B}
+\end{equation}
+\begin{equation}  \label{Ob:O.2}%1 
+A \believes A \sharekey{k_{ab}} B
+\end{equation}
+\begin{equation} \label{Ob:O.3}%6
+B \believes \fresh{A \sharekey{m_{ab}} B}
+\end{equation}
+\begin{equation} \label{Ob:O.4} %2
+B \believes A \sharekey{m_{ab}} B
+\end{equation}
+\begin{equation} \label{Ob:O.5} %4
+B \believes A \believes A \sharekey{k_{ab}} B
+\end{equation}
+\begin{equation} \label{Ob:O.6} %3
+A \believes B \believes A \sharekey{m_{ab}} B
+\end{equation}
+
+\subsection{Idealized protocol}
+\begin{enumerate}[label=\textbf{M\arabic*}]
+\item The first message is ignored because it is not encrypted
+\item $A \rightarrow B: C_a=\left \{  A,\pubkey{k_a}A,t,\left \{A,\pubkey{k_a}A,t\right \}_{k_t^{-1}} \right \}$
+\item $B \rightarrow A: \left \{  C_b,t_b,\left \{A \sharekey{k_{ab}} B\right \}_{k_a} ,\left \{ \circ \right \}_{k_b} \right \}$
+\item $A \rightarrow B: \left \{  C_a,t_a,\left \{A \sharekey{m_{ab}} B\right \}_{k_b} ,\left \{ \circ \right \}_{k_a} \right \}$
+\item $B \rightarrow A: \left \{  t_b,A \sharekey{k_{ab}} B,A\sharekey{m_{ab}}B,\left \{ t_b \right \}_{m_{ab}} \right \}$
+\item $A \rightarrow B: \left \{  t_a,A \sharekey{k_{ab}} B,A\sharekey{m_{ab}}B,\left \{ t_a \right \}_{m_{ab}} \right \}$
+\end{enumerate}
+\subsection{Validation}
+\begin{enumerate}[label=\textbf{M\arabic*}]
+\item ......
+%---------M2
+\item By using the message meaning rule we can say that:
+ \[B \believes T \oncesaid \pubkey{k_a} A\] Certificate freshness holds under hypothesis \ref{hp:H.6s}
+\[B \believes T \believes \pubkey{k_a} A\]
+By applying the Jurisdiction rule joined with \ref{hp:H.1} we obtain:
+\[B\believes \pubkey{k_a} A\]
+%---------M3
+\item 
+Thanks to the timestamp $t_b$ we can say that: 
+\[ A \believes \fresh{C_b,t_b, A\sharekey{k_{ab}}B,\encrypt{\circ}{k_b^-1}} \]
+And, in particular (\textbf{key freshness}):
+\[ A \believes \fresh {A\sharekey{k_{ab}}B} \] 
+Fulfilled \ref{Ob:O.1}\\
+Also, by applying same considerations on certificate as in previous message, we obtain:
+
+\[A\believes \pubkey{k_b} B\]
+By using the message meaning rule we can also say that:
+\[A \believes B \oncesaid (A \sharekey{k_{ab}} B)\]
+Thanks to the freshness brought by $t_b$:
+\[A \believes B \believes (A \sharekey{k_{ab}} B)\]
+Applying the Jurisdiction rule with \ref{hp:H.9}:
+\[A \believes  A\sharekey{k_{ab}}B\] 
+Fulfilled \ref{Ob:O.2}
+%-------M4
+\item
+Thanks to the timestamp $t_a$ we can say that: 
+\[ B \believes \fresh{C_a,t_a, A\sharekey{m_{ab}}B,\encrypt{\circ}{k_b^-1}} \]
+And, in particular (\textbf{key freshness}):
+\[ B \believes \fresh {A\sharekey{m_{ab}}B} \] 
+Fulfilled \ref{Ob:O.3}\\
+Also, by applying same considerations on certificate as in previous message, we obtain:
+\[ B\believes \pubkey{k_a} A\]
+By using the message meaning rule we can also say that:
+\[B \believes A \oncesaid (A \sharekey{m_{ab}} B)\]
+Thanks to the freshness brought by $t_a$:
+\[B \believes A \believes (A \sharekey{m_{ab}} B)\]
+Applying the Jurisdiction rule with \ref{hp:H.10}:
+\[B \believes  A\sharekey{m_{ab}}B\] 
+Fulfilled \ref{Ob:O.4}
+%------M5
+\item 
+\[B \believes A \oncesaid (A \sharekey{k_{ab}}B)\]
+\[B \believes A \oncesaid (A \sharekey{m_{ab}}B)\]
+Thanks to the freshness stated by \ref{hp:H.5}:
+\[B \believes \fresh{A \sharekey{k_{ab}}B}\]
+\[B \believes \fresh{A \sharekey{m_{ab}}B}\]
+By applying the nonce verification rule:
+\[B \believes A \believes (A \sharekey{k_{ab}}B)\]
+Fulfilled \ref{Ob:O.5}
+%------M6
+\item
+\[A \believes B \oncesaid (A \sharekey{k_{ab}}B)\]
+\[A \believes B \oncesaid (A \sharekey{m_{ab}}B)\]
+Thanks to the freshness stated by \ref{hp:H.6}:
+\[A \believes \fresh{A \sharekey{k_{ab}}B}\]
+\[A \believes \fresh{A \sharekey{m_{ab}}B}\]
+By applying the nonce verification rule:
+\[A \believes B \believes (A \sharekey{m_{ab}}B)\]
+Fulfilled \ref{Ob:O.6}
+\end{enumerate}
+
+\end{document}
+$
